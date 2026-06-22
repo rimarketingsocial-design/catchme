@@ -25,15 +25,12 @@ app.use(cors({
   credentials: true,
 }));
 
-// Raw body needed for Stripe webhook signature verification
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/clubs', require('./src/routes/clubs'));
 app.use('/api/checkins', require('./src/routes/checkins'));
 app.use('/api/messages', require('./src/routes/messages'));
-app.use('/api/payments', require('./src/routes/payments'));
 app.use('/api/intentions', require('./src/routes/intentions'));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
