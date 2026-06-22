@@ -95,13 +95,40 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
 
             {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
 
-            <button
-              onClick={initPayment}
-              disabled={loading || !content.trim()}
-              className="w-full py-4 rounded-2xl bg-neon-gradient text-white font-bold text-lg disabled:opacity-50"
-            >
-              {loading ? t('loading') : `${t('pay_and_send')} ${price}`}
-            </button>
+            {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.includes('placeholder') ? (
+              <button
+                onClick={async () => {
+                  if (!content.trim()) return setError('Upiši poruku prvo');
+                  setLoading(true);
+                  try {
+                    await api.post('/api/messages', {
+                      receiver_id: member.user_id,
+                      club_id: clubId,
+                      content,
+                      intention_type: intention,
+                      payment_intent_id: 'test_' + Date.now(),
+                    });
+                    onSent();
+                  } catch (err) {
+                    setError(err.response?.data?.error || t('error'));
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading || !content.trim()}
+                className="w-full py-4 rounded-2xl bg-neon-gradient text-white font-bold text-lg disabled:opacity-50"
+              >
+                {loading ? t('loading') : `🧪 Test Pošalji (${price} - bez plaćanja)`}
+              </button>
+            ) : (
+              <button
+                onClick={initPayment}
+                disabled={loading || !content.trim()}
+                className="w-full py-4 rounded-2xl bg-neon-gradient text-white font-bold text-lg disabled:opacity-50"
+              >
+                {loading ? t('loading') : `${t('pay_and_send')} ${price}`}
+              </button>
+            )}
           </>
         ) : (
           <Elements stripe={stripePromise} options={{ clientSecret, appearance: STRIPE_APPEARANCE }}>

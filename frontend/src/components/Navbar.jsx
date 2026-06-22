@@ -8,7 +8,7 @@ export default function Navbar() {
 
   const tabs = [
     { path: '/clubs', icon: '🎵', label: t('clubs') },
-    ...(profile?.gender === 'female' ? [{ path: '/inbox', icon: '💌', label: t('messages') }] : []),
+    { path: '/inbox', icon: '💌', label: t('messages') },
     { path: '/profile', icon: '👤', label: t('profile') },
   ];
 

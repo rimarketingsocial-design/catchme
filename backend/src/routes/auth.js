@@ -42,7 +42,7 @@ router.post('/profile', requireAuth, async (req, res) => {
 
 // PATCH /api/auth/profile — partial update
 router.patch('/profile', requireAuth, async (req, res) => {
-  const allowed = ['name', 'photo_url', 'language', 'city'];
+  const allowed = ['name', 'photo_url', 'language', 'city', 'bio'];
   const updates = {};
   allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
 

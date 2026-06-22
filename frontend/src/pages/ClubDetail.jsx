@@ -96,7 +96,7 @@ export default function ClubDetail() {
               onClick={() => navigate(`/clubs/${id}/swipe`)}
               className="w-full py-4 rounded-2xl bg-neon-gradient text-white font-bold text-lg shadow-lg"
             >
-              {oppositeLabel} Browse People →
+              {oppositeLabel} Pogledaj ko je tu →
             </button>
             <button
               onClick={handleCheckout}
@@ -110,7 +110,7 @@ export default function ClubDetail() {
             onClick={() => setShowCheckin(true)}
             className="w-full py-4 rounded-2xl bg-neon-gradient text-white font-bold text-lg shadow-lg animate-pulse-neon"
           >
-            {isMale ? `🎟 ${t('checkin_cost')}` : `✨ ${t('free_checkin')}`}
+            {`✨ ${t('free_checkin')}`}
           </button>
         )}
       </div>

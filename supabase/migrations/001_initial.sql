@@ -87,23 +87,35 @@ ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 
 -- Users policies
+DROP POLICY IF EXISTS "Users can read all profiles" ON public.users;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.users;
 CREATE POLICY "Users can read all profiles" ON public.users FOR SELECT USING (true);
 CREATE POLICY "Users can update own profile" ON public.users FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Users can insert own profile" ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Clubs policies
+DROP POLICY IF EXISTS "Anyone can read clubs" ON public.clubs;
 CREATE POLICY "Anyone can read clubs" ON public.clubs FOR SELECT USING (true);
 
 -- Checkins policies
+DROP POLICY IF EXISTS "Anyone can read active checkins" ON public.checkins;
+DROP POLICY IF EXISTS "Users can create own checkins" ON public.checkins;
+DROP POLICY IF EXISTS "Users can update own checkins" ON public.checkins;
 CREATE POLICY "Anyone can read active checkins" ON public.checkins FOR SELECT USING (active = true AND expires_at > NOW());
 CREATE POLICY "Users can create own checkins" ON public.checkins FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own checkins" ON public.checkins FOR UPDATE USING (auth.uid() = user_id);
 
 -- Intentions policies
+DROP POLICY IF EXISTS "Anyone can read intentions" ON public.intentions;
+DROP POLICY IF EXISTS "Users can manage own intention" ON public.intentions;
 CREATE POLICY "Anyone can read intentions" ON public.intentions FOR SELECT USING (true);
 CREATE POLICY "Users can manage own intention" ON public.intentions FOR ALL USING (auth.uid() = user_id);
 
 -- Messages policies
+DROP POLICY IF EXISTS "Users can read own messages" ON public.messages;
+DROP POLICY IF EXISTS "Users can insert messages" ON public.messages;
+DROP POLICY IF EXISTS "Receivers can update messages" ON public.messages;
 CREATE POLICY "Users can read own messages" ON public.messages
   FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
 CREATE POLICY "Users can insert messages" ON public.messages
@@ -112,6 +124,8 @@ CREATE POLICY "Receivers can update messages" ON public.messages
   FOR UPDATE USING (auth.uid() = receiver_id);
 
 -- Payments policies
+DROP POLICY IF EXISTS "Users can read own payments" ON public.payments;
+DROP POLICY IF EXISTS "Backend can insert payments" ON public.payments;
 CREATE POLICY "Users can read own payments" ON public.payments FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Backend can insert payments" ON public.payments FOR INSERT WITH CHECK (true);
 

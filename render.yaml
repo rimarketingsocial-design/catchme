@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: catchme-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: FRONTEND_URL
+        fromGroup: catchme-secrets
+      - key: SUPABASE_URL
+        fromGroup: catchme-secrets
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        fromGroup: catchme-secrets
+      - key: STRIPE_SECRET_KEY
+        fromGroup: catchme-secrets
+      - key: STRIPE_WEBHOOK_SECRET
+        fromGroup: catchme-secrets

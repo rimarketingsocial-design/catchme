@@ -17,8 +17,11 @@ export default function Inbox() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const isMale = profile?.gender === 'male';
+
   const load = () => {
-    api.get('/api/messages/inbox')
+    const endpoint = isMale ? '/api/messages/sent' : '/api/messages/inbox';
+    api.get(endpoint)
       .then(r => setMessages(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -76,14 +79,14 @@ export default function Inbox() {
             >
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-full bg-dark-600 overflow-hidden flex-shrink-0">
-                  {msg.sender?.photo_url
-                    ? <img src={msg.sender.photo_url} className="w-full h-full object-cover" alt="" />
+                  {(isMale ? msg.receiver?.photo_url : msg.sender?.photo_url)
+                    ? <img src={isMale ? msg.receiver?.photo_url : msg.sender?.photo_url} className="w-full h-full object-cover" alt="" />
                     : <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
                   }
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-white font-bold">{msg.sender?.name}</p>
+                    <p className="text-white font-bold">{isMale ? msg.receiver?.name : msg.sender?.name}</p>
                     <div className="flex items-center gap-2">
                       {!msg.read && <div className="w-2 h-2 rounded-full bg-neon-pink" />}
                       <p className="text-gray-600 text-xs">

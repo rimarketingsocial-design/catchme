@@ -21,48 +21,11 @@ router.get('/me', requireAuth, async (req, res) => {
   res.json(data);
 });
 
-// POST /api/checkins — check in (females free, males must provide paymentIntentId)
+// POST /api/checkins — check in (free for everyone)
 router.post('/', requireAuth, async (req, res) => {
-  const { club_id, payment_intent_id } = req.body;
+  const { club_id } = req.body;
 
   if (!club_id) return res.status(400).json({ error: 'club_id is required' });
-
-  // Get user gender
-  const { data: user, error: userErr } = await supabase
-    .from('users')
-    .select('gender')
-    .eq('id', req.userId)
-    .single();
-
-  if (userErr || !user) return res.status(404).json({ error: 'User not found' });
-
-  // Males must pay
-  if (user.gender === 'male') {
-    if (!payment_intent_id) {
-      return res.status(400).json({ error: 'payment_intent_id required for male checkin' });
-    }
-
-    // Verify payment with Stripe
-    const intent = await stripe.paymentIntents.retrieve(payment_intent_id);
-    if (intent.status !== 'succeeded') {
-      return res.status(402).json({ error: 'Payment not completed' });
-    }
-
-    // Verify amount ($0.50 = 50 cents)
-    if (intent.amount < 50) {
-      return res.status(402).json({ error: 'Insufficient payment amount' });
-    }
-
-    // Record payment
-    await supabase.from('payments').upsert({
-      user_id: req.userId,
-      type: 'checkin',
-      amount: intent.amount,
-      stripe_payment_id: payment_intent_id,
-      status: 'succeeded',
-      metadata: { club_id },
-    });
-  }
 
   // Deactivate previous checkins
   await supabase

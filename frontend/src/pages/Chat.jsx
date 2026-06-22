@@ -14,21 +14,46 @@ export default function Chat() {
   const navigate = useNavigate();
   const { t, profile } = useApp();
   const [message, setMessage] = useState(null);
+  const [replies, setReplies] = useState([]);
   const [reply, setReply] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
   const bottomRef = useRef();
 
-  useEffect(() => {
+  const load = () => {
     api.get(`/api/messages/${id}`)
-      .then(r => setMessage(r.data))
-      .catch(console.error)
+      .then(r => {
+        setMessage(r.data);
+        setReplies(r.data.replies || []);
+      })
+      .catch(err => {
+        console.error(err);
+        setError(err.response?.data?.error || 'Poruka nije pronađena');
+      })
       .finally(() => setLoading(false));
-  }, [id]);
+  };
+
+  useEffect(() => { load(); }, [id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [message]);
+  }, [replies]);
+
+  const handleSendReply = async () => {
+    if (!reply.trim() || sending) return;
+    setSending(true);
+    setError('');
+    try {
+      await api.post(`/api/messages/${id}/reply`, { content: reply.trim() });
+      setReply('');
+      load();
+    } catch (err) {
+      setError(err.response?.data?.error || t('error'));
+    } finally {
+      setSending(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -95,12 +120,32 @@ export default function Chat() {
           </div>
         </div>
 
+        {/* Replies */}
+        {replies.map((r, i) => {
+          const isMyReply = r.sender_id === profile?.id;
+          return (
+            <div key={i} className={`flex ${isMyReply ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+                isMyReply
+                  ? 'bg-neon-gradient text-white rounded-br-sm'
+                  : 'bg-dark-700 text-white rounded-bl-sm'
+              }`}>
+                <p className="text-sm leading-relaxed">{r.content}</p>
+                <p className={`text-xs mt-1 ${isMyReply ? 'text-white/60' : 'text-gray-500'}`}>
+                  {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+
         <div ref={bottomRef} />
       </div>
 
-      {/* Reply input (females only) */}
-      {!isSender && (
+      {/* Reply input (females) or waiting message (males) */}
+      {!isSender ? (
         <div className="bg-dark-800 border-t border-dark-600 px-4 py-4">
+          {error && <p className="text-red-400 text-xs mb-2">{error}</p>}
           <div className="flex gap-3 items-end">
             <textarea
               value={reply}
@@ -114,21 +159,28 @@ export default function Chat() {
                 e.target.style.height = 'auto';
                 e.target.style.height = e.target.scrollHeight + 'px';
               }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendReply();
+                }
+              }}
             />
             <button
+              onClick={handleSendReply}
               disabled={!reply.trim() || sending}
               className="w-12 h-12 rounded-xl bg-neon-gradient flex items-center justify-center text-white disabled:opacity-40 transition-all active:scale-90"
             >
-              ✈
+              {sending ? '...' : '✈'}
             </button>
           </div>
         </div>
-      )}
-
-      {isSender && (
-        <div className="bg-dark-800 border-t border-dark-600 px-6 py-5 text-center">
-          <p className="text-gray-500 text-sm">⏳ Waiting for her reply...</p>
-        </div>
+      ) : (
+        replies.length === 0 && (
+          <div className="bg-dark-800 border-t border-dark-600 px-6 py-5 text-center">
+            <p className="text-gray-500 text-sm">⏳ Čeka se odgovor...</p>
+          </div>
+        )
       )}
     </div>
   );

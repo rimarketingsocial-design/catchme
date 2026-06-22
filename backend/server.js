@@ -1,4 +1,8 @@
 require('dotenv').config();
+// Fix SSL certificate verification for local development on Windows
+if (process.env.NODE_ENV !== 'production') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 const express = require('express');
 const cors = require('cors');
 
@@ -11,7 +15,11 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) return cb(null, true);
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.some(o => origin.startsWith(o))) return cb(null, true);
+    // Allow local network IPs for mobile testing
+    if (/^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin)) return cb(null, true);
+    if (/^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin)) return cb(null, true);
     cb(new Error('Not allowed by CORS'));
   },
   credentials: true,

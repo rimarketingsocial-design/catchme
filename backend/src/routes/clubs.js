@@ -17,6 +17,36 @@ router.get('/', requireAuth, async (req, res) => {
   res.json(data);
 });
 
+// GET /api/clubs/counts?city=Belgrade — opposite gender counts per club
+router.get('/counts', requireAuth, async (req, res) => {
+  const city = req.query.city || 'Belgrade';
+  const now = new Date().toISOString();
+
+  const { data: me } = await supabase
+    .from('users').select('gender').eq('id', req.userId).single();
+
+  if (!me) return res.status(404).json({ error: 'User not found' });
+
+  const oppositeGender = me.gender === 'male' ? 'female' : 'male';
+
+  const { data, error } = await supabase
+    .from('checkins')
+    .select('club_id, users!inner(gender), clubs!inner(city)')
+    .eq('active', true)
+    .gt('expires_at', now)
+    .eq('users.gender', oppositeGender)
+    .eq('clubs.city', city);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const counts = {};
+  (data || []).forEach(c => {
+    counts[c.club_id] = (counts[c.club_id] || 0) + 1;
+  });
+
+  res.json(counts);
+});
+
 // GET /api/clubs/:id
 router.get('/:id', requireAuth, async (req, res) => {
   const { data, error } = await supabase

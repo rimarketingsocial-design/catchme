@@ -54,17 +54,33 @@ router.get('/:id', requireAuth, async (req, res) => {
       club:club_id(id, name)
     `)
     .eq('id', req.params.id)
-    .or(`sender_id.eq.${req.userId},receiver_id.eq.${req.userId}`)
     .single();
 
-  if (error) return res.status(404).json({ error: 'Message not found' });
+  if (error || !data) return res.status(404).json({ error: 'Message not found' });
+
+  // Access check: only sender or receiver can view
+  if (data.sender_id !== req.userId && data.receiver_id !== req.userId) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
 
   // Mark as read if receiver
   if (data.receiver_id === req.userId && !data.read) {
     await supabase.from('messages').update({ read: true }).eq('id', req.params.id);
   }
 
-  res.json(data);
+  // Fetch replies between the same two users in same club, after original message
+  const { data: replies } = await supabase
+    .from('messages')
+    .select('id, content, sender_id, created_at')
+    .eq('club_id', data.club_id)
+    .eq('payment_status', 'paid')
+    .neq('id', req.params.id)
+    .in('sender_id', [data.sender_id, data.receiver_id])
+    .in('receiver_id', [data.sender_id, data.receiver_id])
+    .gt('created_at', data.created_at)
+    .order('created_at', { ascending: true });
+
+  res.json({ ...data, replies: replies || [] });
 });
 
 // POST /api/messages — send message (males only, requires payment)
@@ -79,26 +95,28 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Invalid intention_type' });
   }
 
-  // Verify payment
-  const intent = await stripe.paymentIntents.retrieve(payment_intent_id);
-  if (intent.status !== 'succeeded') {
-    return res.status(402).json({ error: 'Payment not completed' });
-  }
+  const isTestMode = process.env.STRIPE_SECRET_KEY?.includes('placeholder');
 
-  const expectedAmount = MESSAGE_PRICES[intention_type];
-  if (intent.amount < expectedAmount) {
-    return res.status(402).json({ error: 'Insufficient payment amount' });
-  }
+  if (!isTestMode) {
+    const intent = await stripe.paymentIntents.retrieve(payment_intent_id);
+    if (intent.status !== 'succeeded') {
+      return res.status(402).json({ error: 'Payment not completed' });
+    }
 
-  // Record payment
-  await supabase.from('payments').upsert({
-    user_id: req.userId,
-    type: 'message',
-    amount: intent.amount,
-    stripe_payment_id: payment_intent_id,
-    status: 'succeeded',
-    metadata: { receiver_id, club_id, intention_type },
-  });
+    const expectedAmount = MESSAGE_PRICES[intention_type];
+    if (intent.amount < expectedAmount) {
+      return res.status(402).json({ error: 'Insufficient payment amount' });
+    }
+
+    await supabase.from('payments').upsert({
+      user_id: req.userId,
+      type: 'message',
+      amount: intent.amount,
+      stripe_payment_id: payment_intent_id,
+      status: 'succeeded',
+      metadata: { receiver_id, club_id, intention_type },
+    });
+  }
 
   // Create message
   const { data, error } = await supabase
@@ -116,6 +134,42 @@ router.post('/', requireAuth, async (req, res) => {
       sender:sender_id(id, name, photo_url),
       receiver:receiver_id(id, name, photo_url)
     `)
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// POST /api/messages/:id/reply — free reply from receiver
+router.post('/:id/reply', requireAuth, async (req, res) => {
+  const { content } = req.body;
+  if (!content?.trim()) return res.status(400).json({ error: 'content is required' });
+
+  // Get original message
+  const { data: original, error: origErr } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('id', req.params.id)
+    .single();
+
+  if (origErr || !original) return res.status(404).json({ error: 'Message not found' });
+
+  // Only the receiver can reply
+  if (original.receiver_id !== req.userId) {
+    return res.status(403).json({ error: 'Only the receiver can reply' });
+  }
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      sender_id: req.userId,
+      receiver_id: original.sender_id,
+      club_id: original.club_id,
+      content: content.trim(),
+      intention_type: original.intention_type,
+      payment_status: 'paid',
+    })
+    .select()
     .single();
 
   if (error) return res.status(500).json({ error: error.message });

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import api from '../lib/api';
 import { useApp } from '../context/AppContext';
 import Navbar from '../components/Navbar';
@@ -8,33 +9,93 @@ export default function ClubList() {
   const navigate = useNavigate();
   const { t, checkin, profile } = useApp();
   const [clubs, setClubs] = useState([]);
+  const [counts, setCounts] = useState({});
+  const [animating, setAnimating] = useState({});
   const [loading, setLoading] = useState(true);
+  const prevCounts = useRef({});
 
-  useEffect(() => {
-    api.get('/api/clubs?city=Belgrade')
-      .then(r => setClubs(r.data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+  const isMale = profile?.gender === 'male';
+  const counterLabel = isMale ? 'Djevojaka tu' : 'Momaka tu';
+
+  const fetchCounts = useCallback(async () => {
+    try {
+      const { data } = await api.get('/api/clubs/counts?city=Belgrade');
+      setCounts(prev => {
+        // Find which clubs changed and animate them
+        const changed = {};
+        Object.keys(data).forEach(clubId => {
+          if (data[clubId] !== prev[clubId]) changed[clubId] = true;
+        });
+        Object.keys(prev).forEach(clubId => {
+          if (!data[clubId] && prev[clubId]) changed[clubId] = true;
+        });
+        if (Object.keys(changed).length > 0) {
+          setAnimating(changed);
+          setTimeout(() => setAnimating({}), 800);
+        }
+        return data;
+      });
+    } catch (err) {
+      console.error(err);
+    }
   }, []);
 
+  useEffect(() => {
+    // Initial load
+    Promise.all([
+      api.get('/api/clubs?city=Belgrade'),
+      api.get('/api/clubs/counts?city=Belgrade'),
+    ]).then(([clubsRes, countsRes]) => {
+      setClubs(clubsRes.data);
+      setCounts(countsRes.data);
+      prevCounts.current = countsRes.data;
+    }).catch(console.error)
+      .finally(() => setLoading(false));
+
+    // Supabase Realtime — instant update on check-in/out
+    const channel = supabase
+      .channel('checkins-live')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'checkins',
+      }, () => fetchCounts())
+      .subscribe();
+
+    // Polling fallback every 8 seconds (in case realtime not enabled)
+    const interval = setInterval(fetchCounts, 8000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [fetchCounts]);
+
   return (
-    <div className="min-h-screen bg-dark-900 pb-24">
+    <div className="min-h-screen bg-dark-900 pb-28">
+      <style>{`
+        @keyframes countPop {
+          0%   { transform: scale(1); }
+          40%  { transform: scale(1.5); }
+          70%  { transform: scale(0.9); }
+          100% { transform: scale(1); }
+        }
+        .count-pop { animation: countPop 0.5s ease-out; }
+      `}</style>
+
       {/* Header */}
-      <div className="px-6 pt-12 pb-6">
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <p className="text-gray-500 text-sm">👋 {profile?.name}</p>
-            <h1 className="text-2xl font-black text-white">
-              {t('clubs_in')} <span className="bg-neon-gradient bg-clip-text text-transparent">Belgrade</span>
-            </h1>
+      <div className="px-5 pt-14 pb-4">
+        <p className="text-gray-500 text-sm mb-0.5">👋 {profile?.name}</p>
+        <h1 className="text-3xl font-black text-white leading-tight">
+          Klubovi u{' '}
+          <span className="bg-neon-gradient bg-clip-text text-transparent">Beogradu</span>
+        </h1>
+        {checkin && (
+          <div className="mt-3 flex items-center gap-2 bg-neon-pink/10 border border-neon-pink/30 rounded-2xl px-4 py-2.5 w-fit">
+            <div className="w-2 h-2 rounded-full bg-neon-pink animate-pulse" />
+            <p className="text-neon-pink text-sm font-semibold">Live: {checkin.clubs?.name}</p>
           </div>
-          {checkin && (
-            <div className="bg-dark-700 border border-neon-pink/30 rounded-xl px-3 py-2 text-right">
-              <p className="text-xs text-gray-500">Live at</p>
-              <p className="text-white text-sm font-bold truncate max-w-[120px]">{checkin.clubs?.name}</p>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Club list */}
@@ -42,35 +103,61 @@ export default function ClubList() {
         <div className="flex items-center justify-center h-64 text-gray-500">{t('loading')}</div>
       ) : (
         <div className="px-4 flex flex-col gap-4">
-          {clubs.map(club => (
-            <button
-              key={club.id}
-              onClick={() => navigate(`/clubs/${club.id}`)}
-              className="relative w-full rounded-2xl overflow-hidden shadow-xl active:scale-95 transition-transform"
-            >
-              <img
-                src={club.photo_url}
-                alt={club.name}
-                className="w-full h-48 object-cover"
-                onError={e => { e.target.src = 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800'; }}
-              />
-              <div className="absolute inset-0 bg-card-gradient" />
+          {clubs.map(club => {
+            const count = counts[club.id] || 0;
+            const isActive = checkin?.club_id === club.id;
+            const isAnimating = animating[club.id];
 
-              {checkin?.club_id === club.id && (
-                <div className="absolute top-3 right-3 bg-neon-pink text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {t('checked_in')}
+            return (
+              <button
+                key={club.id}
+                onClick={() => navigate(`/clubs/${club.id}`)}
+                className="relative w-full rounded-3xl overflow-hidden shadow-2xl active:scale-95 transition-all duration-200"
+              >
+                <img
+                  src={club.photo_url}
+                  alt={club.name}
+                  className="w-full h-52 object-cover"
+                  onError={e => { e.target.src = 'https://picsum.photos/seed/club/800/500'; }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+
+                {/* Live counter */}
+                <div className={`absolute top-3 right-3 flex flex-col items-center backdrop-blur-md border rounded-2xl px-3 py-2 min-w-[64px] transition-all duration-300 ${
+                  count > 0
+                    ? 'bg-black/60 border-neon-pink/40'
+                    : 'bg-black/40 border-white/10'
+                }`}>
+                  <span
+                    key={count}
+                    className={`text-2xl font-black leading-none ${count > 0 ? 'text-neon-pink' : 'text-gray-500'} ${isAnimating ? 'count-pop' : ''}`}
+                  >
+                    {count}
+                  </span>
+                  <span className="text-gray-300 text-[10px] font-medium mt-0.5 leading-tight text-center">
+                    {counterLabel}
+                  </span>
+                  {count > 0 && (
+                    <div className={`w-1.5 h-1.5 rounded-full bg-neon-pink mt-1 ${isAnimating ? 'animate-ping' : 'animate-pulse'}`} />
+                  )}
                 </div>
-              )}
 
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-                <h3 className="text-white font-black text-xl">{club.name}</h3>
-                <p className="text-gray-300 text-sm mt-0.5">📍 {club.address}</p>
-                {club.description && (
-                  <p className="text-gray-400 text-xs mt-1 line-clamp-1">{club.description}</p>
+                {isActive && (
+                  <div className="absolute top-3 left-3 bg-neon-pink text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                    ✓ Prijavljen
+                  </div>
                 )}
-              </div>
-            </button>
-          ))}
+
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+                  <h3 className="text-white font-black text-xl leading-tight">{club.name}</h3>
+                  <p className="text-gray-300 text-sm mt-1">📍 {club.address}</p>
+                  {club.description && (
+                    <p className="text-gray-400 text-xs mt-1 line-clamp-1">{club.description}</p>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 
