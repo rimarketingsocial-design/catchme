@@ -28,10 +28,12 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/api/auth', require('./src/routes/auth'));
+app.use('/api/club-auth', require('./src/routes/club-auth'));
 app.use('/api/clubs', require('./src/routes/clubs'));
 app.use('/api/checkins', require('./src/routes/checkins'));
 app.use('/api/messages', require('./src/routes/messages'));
 app.use('/api/intentions', require('./src/routes/intentions'));
+app.use('/api/events', require('./src/routes/events'));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

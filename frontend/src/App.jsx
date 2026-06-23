@@ -11,6 +11,9 @@ import Swipe from './pages/Swipe';
 import Inbox from './pages/Inbox';
 import Chat from './pages/Chat';
 import Profile from './pages/Profile';
+import ClubRegister from './pages/ClubRegister';
+import ClubLogin from './pages/ClubLogin';
+import ClubDashboard from './pages/ClubDashboard';
 
 function ProtectedRoute({ children }) {
   const { session, loading } = useApp();
@@ -59,6 +62,10 @@ export default function App() {
             <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
             <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+            <Route path="/club-register" element={<ClubRegister />} />
+            <Route path="/club-login" element={<ClubLogin />} />
+            <Route path="/club-dashboard" element={<ClubDashboard />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

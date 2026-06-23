@@ -73,6 +73,14 @@ export default function Splash() {
         >
           {t('sign_in')}
         </button>
+        <div className="text-center pt-2">
+          <button
+            onClick={() => navigate('/club-register')}
+            className="text-gray-500 text-sm hover:text-neon-pink transition-colors"
+          >
+            Imaš klub? <span className="text-neon-pink font-semibold">Napravi nalog</span>
+          </button>
+        </div>
       </div>
     </div>
   );

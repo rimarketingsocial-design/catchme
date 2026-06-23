@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(npm install *)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(git commit -m ' *)",
+      "Bash(git config *)",
+      "PowerShell(Stop-Process -Name \"node\" -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd C:\\\\catchme\\\\backend; node server.js')",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process node | Where-Object {$_.MainWindowTitle -ne \"\"} | Select-Object Id; netstat -ano | findstr \":5173\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
