@@ -14,6 +14,7 @@ import Profile from './pages/Profile';
 import ClubRegister from './pages/ClubRegister';
 import ClubLogin from './pages/ClubLogin';
 import ClubDashboard from './pages/ClubDashboard';
+import Society from './pages/Society';
 
 function ProtectedRoute({ children }) {
   const { session, loading } = useApp();
@@ -63,6 +64,7 @@ export default function App() {
             <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
+            <Route path="/society" element={<ProtectedRoute><Society /></ProtectedRoute>} />
             <Route path="/club-register" element={<ClubRegister />} />
             <Route path="/club-login" element={<ClubLogin />} />
             <Route path="/club-dashboard" element={<ClubDashboard />} />

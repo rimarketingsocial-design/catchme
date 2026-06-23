@@ -34,6 +34,8 @@ app.use('/api/checkins', require('./src/routes/checkins'));
 app.use('/api/messages', require('./src/routes/messages'));
 app.use('/api/intentions', require('./src/routes/intentions'));
 app.use('/api/events', require('./src/routes/events'));
+app.use('/api/vibe', require('./src/routes/vibe'));
+app.use('/api/society', require('./src/routes/society'));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

@@ -173,6 +173,11 @@ router.post('/:id/reply', requireAuth, async (req, res) => {
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
+
+  // Check if society unlocked (10+ messages)
+  const { checkSociety } = require('./society');
+  checkSociety(req.userId, original.sender_id, original.club_id).catch(() => {});
+
   res.json(data);
 });
 

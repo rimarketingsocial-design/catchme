@@ -12,6 +12,8 @@ const CITY_DISPLAY = {
 };
 const cityDisplay = (city, lang) => CITY_DISPLAY[lang]?.[city] || city;
 import Navbar from '../components/Navbar';
+import VibeStories from '../components/VibeStories';
+import VibeModal from '../components/VibeModal';
 
 const IconPin = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -54,6 +56,7 @@ export default function ClubList() {
   const [cities, setCities] = useState([]);
   const [selectedCity, setSelectedCity] = useState('Belgrade');
   const [showCityPicker, setShowCityPicker] = useState(false);
+  const [showVibe, setShowVibe] = useState(false);
   const prevCounts = useRef({});
 
   const isMale = profile?.gender === 'male';
@@ -169,6 +172,9 @@ export default function ClubList() {
         )}
       </div>
 
+      {/* Vibe Stories */}
+      <VibeStories clubId={checkin?.club_id} />
+
       {loading ? (
         <div className="flex items-center justify-center h-64 text-gray-500">{t('loading')}</div>
       ) : activeClubs.length === 0 ? (
@@ -245,7 +251,8 @@ export default function ClubList() {
         </div>
       )}
 
-      <Navbar />
+      <Navbar onVibeClick={() => setShowVibe(true)} />
+      {showVibe && <VibeModal onClose={() => setShowVibe(false)} onSuccess={() => setShowVibe(false)} />}
     </div>
   );
 }
