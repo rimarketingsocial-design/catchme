@@ -80,7 +80,18 @@ export default {
   // Nav
   clubs: 'Klubovi',
   messages: 'Poruke',
+  society: 'Društvo',
   profile: 'Profil',
+
+  // ClubList
+  good_evening: 'Dobro veče',
+  tonight_in: 'Večeras u',
+  girls_here: 'Djevojaka',
+  guys_here: 'Momaka',
+  no_parties: 'Nema žurki večeras',
+  no_parties_sub: 'Provjerite sutra ili odaberite drugi grad',
+  vibe_be_first: 'Budi prvi/a koji objavljuje Vibe',
+  checked_in_live: 'Live',
 
   // Misc
   loading: 'Učitavanje...',

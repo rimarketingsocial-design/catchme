@@ -35,7 +35,7 @@ export default function Navbar({ onVibeClick }) {
     { path: '/clubs', icon: IconClubs, label: t('clubs') },
     { path: '/inbox', icon: IconMessages, label: t('messages') },
     null, // center button placeholder
-    { path: '/society', icon: IconSociety, label: 'Društvo' },
+    { path: '/society', icon: IconSociety, label: t('society') },
     { path: '/profile', icon: IconProfile, label: t('profile') },
   ];
 

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import api from '../lib/api';
 import { useApp } from '../context/AppContext';
 import StoryViewer from './StoryViewer';
+import VibeModal from './VibeModal';
 
 const MEDAL_COLORS = {
   fire:  'from-orange-500 to-red-500',
@@ -12,8 +13,8 @@ const MEDAL_COLORS = {
 };
 const MEDAL_EMOJI = { fire: '🔥', vibe: '💫', queen: '👑', party: '🎉' };
 
-export default function VibeStories({ city, clubId }) {
-  const { profile } = useApp();
+export default function VibeStories({ city, clubId, onVibeClick }) {
+  const { profile, t } = useApp();
   const [stories, setStories] = useState([]);
   const [viewing, setViewing] = useState(null);
 
@@ -46,7 +47,19 @@ export default function VibeStories({ city, clubId }) {
     );
   };
 
-  if (!stories.length) return null;
+  if (!stories.length) return (
+    <div className="px-4 mb-5">
+      <button
+        onClick={onVibeClick}
+        className="flex items-center gap-3 bg-dark-800/60 border border-dashed border-dark-600 rounded-2xl px-4 py-3 w-full hover:border-neon-pink/40 transition-colors"
+      >
+        <div className="w-10 h-10 rounded-full bg-neon-pink/10 border border-neon-pink/30 flex items-center justify-center flex-shrink-0">
+          <span className="text-neon-pink text-xl font-bold">+</span>
+        </div>
+        <p className="text-gray-500 text-sm">{t('vibe_be_first')}</p>
+      </button>
+    </div>
+  );
 
   return (
     <>

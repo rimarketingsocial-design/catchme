@@ -60,7 +60,7 @@ export default function ClubList() {
   const prevCounts = useRef({});
 
   const isMale = profile?.gender === 'male';
-  const counterLabel = isMale ? 'Djevojaka' : 'Momaka';
+  const counterLabel = isMale ? t('girls_here') : t('guys_here');
 
   const fetchCounts = useCallback(async () => {
     try {
@@ -131,9 +131,9 @@ export default function ClubList() {
 
       {/* Header */}
       <div className="px-5 pt-14 pb-6">
-        <p className="text-gray-500 text-sm mb-0.5">Dobro veče, {profile?.name}</p>
+        <p className="text-gray-500 text-sm mb-0.5">{t('good_evening')}, {profile?.name}</p>
         <h1 className="text-3xl font-black text-white leading-tight flex items-center gap-2 flex-wrap">
-          Večeras u{' '}
+          {t('tonight_in')}{' '}
           <button
             onClick={() => setShowCityPicker(v => !v)}
             className="flex items-center gap-1 city-outline hover:opacity-80 transition-opacity"
@@ -167,13 +167,13 @@ export default function ClubList() {
         {checkin && (
           <div className="mt-3 flex items-center gap-2 bg-neon-pink/10 border border-neon-pink/30 rounded-2xl px-4 py-2.5 w-fit">
             <div className="w-2 h-2 rounded-full bg-neon-pink animate-pulse" />
-            <p className="text-neon-pink text-sm font-semibold">Live: {checkin.clubs?.name}</p>
+            <p className="text-neon-pink text-sm font-semibold">{t('checked_in_live')}: {checkin.clubs?.name}</p>
           </div>
         )}
       </div>
 
       {/* Vibe Stories — ispod headera, svi za izabrani grad */}
-      <VibeStories city={selectedCity} />
+      <VibeStories city={selectedCity} onVibeClick={() => setShowVibe(true)} />
 
       {loading ? (
         <div className="flex items-center justify-center h-64 text-gray-500">{t('loading')}</div>
@@ -182,8 +182,8 @@ export default function ClubList() {
           <div className="w-16 h-16 rounded-full bg-dark-800 flex items-center justify-center mb-1">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 5v6m0 4h.01"/></svg>
           </div>
-          <p className="text-gray-400 text-base font-semibold">Nema žurki večeras</p>
-          <p className="text-gray-600 text-sm">Provjerite sutra ili odaberite drugi grad</p>
+          <p className="text-gray-400 text-base font-semibold">{t('no_parties')}</p>
+          <p className="text-gray-600 text-sm">{t('no_parties_sub')}</p>
         </div>
       ) : (
         <div className="px-4 flex flex-col gap-5">

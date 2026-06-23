@@ -80,7 +80,18 @@ export default {
   // Nav
   clubs: 'Clubs',
   messages: 'Messages',
+  society: 'Society',
   profile: 'Profile',
+
+  // ClubList
+  good_evening: 'Good evening',
+  tonight_in: 'Tonight in',
+  girls_here: 'Girls',
+  guys_here: 'Guys',
+  no_parties: 'No parties tonight',
+  no_parties_sub: 'Check back tomorrow or pick another city',
+  vibe_be_first: 'Be the first to post a Vibe',
+  checked_in_live: 'Live',
 
   // Misc
   loading: 'Loading...',
