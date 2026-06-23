@@ -105,13 +105,16 @@ export default function ClubList() {
         }
         .count-pop { animation: countPop 0.5s ease-out; }
         .city-outline {
-          -webkit-text-stroke: 1.5px #f72585;
-          color: transparent;
           background: linear-gradient(135deg, #f72585, #7209b7);
           -webkit-background-clip: text;
           background-clip: text;
           -webkit-text-fill-color: transparent;
-          filter: drop-shadow(0 0 8px rgba(247,37,133,0.4));
+          border: 1.5px solid #f72585;
+          border-radius: 10px;
+          padding: 0 10px 2px 10px;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
         }
       `}</style>
 
