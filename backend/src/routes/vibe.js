@@ -19,10 +19,10 @@ router.get('/', requireAuth, async (req, res) => {
     if (clubIds.length === 0) return res.json([]);
   }
 
-  // Step 2: fetch stories
+  // Step 2: fetch stories (no join — user_id refs auth.users, not public.users)
   let query = supabase
     .from('vibe_stories')
-    .select('*, users(id, name, photo_url)')
+    .select('*')
     .gt('expires_at', now)
     .order('created_at', { ascending: false });
 
@@ -33,7 +33,16 @@ router.get('/', requireAuth, async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   if (!stories?.length) return res.json([]);
 
-  // Step 3: count coins per story
+  // Step 3: fetch user profiles from public.users
+  const userIds = [...new Set(stories.map(s => s.user_id))];
+  const { data: users } = await supabase
+    .from('users')
+    .select('id, name, photo_url')
+    .in('id', userIds);
+  const userMap = {};
+  (users || []).forEach(u => { userMap[u.id] = u; });
+
+  // Step 4: count coins per story
   const storyIds = stories.map(s => s.id);
   const { data: coins } = await supabase
     .from('catch_coins')
@@ -47,7 +56,7 @@ router.get('/', requireAuth, async (req, res) => {
 
   const result = stories.map(s => ({
     ...s,
-    user: s.users,
+    user: userMap[s.user_id] || null,
     coin_count: coinMap[s.id] || 0,
   })).sort((a, b) => b.coin_count - a.coin_count);
 
