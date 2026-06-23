@@ -5,6 +5,30 @@ import api from '../lib/api';
 import { useApp } from '../context/AppContext';
 import Navbar from '../components/Navbar';
 
+const IconPin = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+
+const IconMusic = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+  </svg>
+);
+
+const IconClock = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+
+const IconFire = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2c0 0-5 5.5-5 10a5 5 0 0 0 10 0c0-2-1-4-2-5.5 0 2-1.5 3-1.5 3S12 7 12 2z"/>
+  </svg>
+);
+
 export default function ClubList() {
   const navigate = useNavigate();
   const { t, checkin, profile } = useApp();
@@ -16,13 +40,12 @@ export default function ClubList() {
   const prevCounts = useRef({});
 
   const isMale = profile?.gender === 'male';
-  const counterLabel = isMale ? 'Djevojaka tu' : 'Momaka tu';
+  const counterLabel = isMale ? 'Djevojaka' : 'Momaka';
 
   const fetchCounts = useCallback(async () => {
     try {
       const { data } = await api.get('/api/clubs/counts?city=Belgrade');
       setCounts(prev => {
-        // Find which clubs changed and animate them
         const changed = {};
         Object.keys(data).forEach(clubId => {
           if (data[clubId] !== prev[clubId]) changed[clubId] = true;
@@ -42,7 +65,6 @@ export default function ClubList() {
   }, []);
 
   useEffect(() => {
-    // Initial load
     Promise.all([
       api.get('/api/clubs?city=Belgrade'),
       api.get('/api/clubs/counts?city=Belgrade'),
@@ -55,17 +77,11 @@ export default function ClubList() {
     }).catch(console.error)
       .finally(() => setLoading(false));
 
-    // Supabase Realtime — instant update on check-in/out
     const channel = supabase
       .channel('checkins-live')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'checkins',
-      }, () => fetchCounts())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'checkins' }, () => fetchCounts())
       .subscribe();
 
-    // Polling fallback every 8 seconds (in case realtime not enabled)
     const interval = setInterval(fetchCounts, 8000);
 
     return () => {
@@ -73,6 +89,9 @@ export default function ClubList() {
       clearInterval(interval);
     };
   }, [fetchCounts]);
+
+  // Only show clubs with an event tonight
+  const activeClubs = clubs.filter(c => todayEvents[c.id]);
 
   return (
     <div className="min-h-screen bg-dark-900 pb-28">
@@ -87,10 +106,10 @@ export default function ClubList() {
       `}</style>
 
       {/* Header */}
-      <div className="px-5 pt-14 pb-4">
-        <p className="text-gray-500 text-sm mb-0.5">👋 {profile?.name}</p>
+      <div className="px-5 pt-14 pb-6">
+        <p className="text-gray-500 text-sm mb-0.5">Dobro veče, {profile?.name}</p>
         <h1 className="text-3xl font-black text-white leading-tight">
-          Klubovi u{' '}
+          Večeras u{' '}
           <span className="bg-neon-gradient bg-clip-text text-transparent">Beogradu</span>
         </h1>
         {checkin && (
@@ -101,16 +120,21 @@ export default function ClubList() {
         )}
       </div>
 
-      {/* Club list */}
       {loading ? (
         <div className="flex items-center justify-center h-64 text-gray-500">{t('loading')}</div>
+      ) : activeClubs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 gap-3 text-center px-8">
+          <span className="text-5xl opacity-30">🌙</span>
+          <p className="text-gray-500 text-base font-medium">Nema žurki večeras</p>
+          <p className="text-gray-600 text-sm">Provjerite sutra</p>
+        </div>
       ) : (
-        <div className="px-4 flex flex-col gap-4">
-          {clubs.map(club => {
+        <div className="px-4 flex flex-col gap-5">
+          {activeClubs.map(club => {
             const count = counts[club.id] || 0;
             const isActive = checkin?.club_id === club.id;
             const isAnimating = animating[club.id];
-            const todayEvent = todayEvents[club.id];
+            const event = todayEvents[club.id];
 
             return (
               <button
@@ -121,26 +145,22 @@ export default function ClubList() {
                 <img
                   src={club.photo_url}
                   alt={club.name}
-                  className="w-full h-52 object-cover"
+                  className="w-full h-56 object-cover"
                   onError={e => { e.target.src = 'https://picsum.photos/seed/club/800/500'; }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
                 {/* Live counter */}
-                <div className={`absolute top-3 right-3 flex flex-col items-center backdrop-blur-md border rounded-2xl px-3 py-2 min-w-[64px] transition-all duration-300 ${
-                  count > 0
-                    ? 'bg-black/60 border-neon-pink/40'
-                    : 'bg-black/40 border-white/10'
+                <div className={`absolute top-3 right-3 flex flex-col items-center backdrop-blur-md border rounded-2xl px-3 py-2 min-w-[60px] transition-all ${
+                  count > 0 ? 'bg-black/60 border-neon-pink/50' : 'bg-black/40 border-white/10'
                 }`}>
                   <span
                     key={count}
-                    className={`text-2xl font-black leading-none ${count > 0 ? 'text-neon-pink' : 'text-gray-500'} ${isAnimating ? 'count-pop' : ''}`}
+                    className={`text-xl font-black leading-none ${count > 0 ? 'text-neon-pink' : 'text-gray-500'} ${isAnimating ? 'count-pop' : ''}`}
                   >
                     {count}
                   </span>
-                  <span className="text-gray-300 text-[10px] font-medium mt-0.5 leading-tight text-center">
-                    {counterLabel}
-                  </span>
+                  <span className="text-gray-300 text-[9px] font-medium mt-0.5 leading-tight text-center">{counterLabel}</span>
                   {count > 0 && (
                     <div className={`w-1.5 h-1.5 rounded-full bg-neon-pink mt-1 ${isAnimating ? 'animate-ping' : 'animate-pulse'}`} />
                   )}
@@ -152,18 +172,34 @@ export default function ClubList() {
                   </div>
                 )}
 
+                {/* Bottom info */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-                  <h3 className="text-white font-black text-xl leading-tight">{club.name}</h3>
-                  <p className="text-gray-300 text-sm mt-1">📍 {club.address}</p>
-                  {club.genre && (
-                    <p className="text-gray-400 text-xs mt-0.5">🎵 {club.genre}</p>
-                  )}
-                  {todayEvent && (
-                    <div className="mt-2 flex items-center gap-1.5 bg-neon-pink/20 border border-neon-pink/40 rounded-xl px-3 py-1.5 w-fit">
-                      <span className="text-neon-pink text-xs font-bold">🎉 {todayEvent.name}</span>
-                      <span className="text-gray-400 text-xs">· {todayEvent.start_time?.slice(0, 5)}h</span>
+                  <h3 className="text-white font-black text-2xl leading-tight">{club.name}</h3>
+
+                  <div className="flex items-center gap-3 mt-1.5">
+                    {club.address && (
+                      <span className="flex items-center gap-1 text-gray-400 text-xs">
+                        <IconPin /> {club.address}
+                      </span>
+                    )}
+                    {club.genre && (
+                      <span className="flex items-center gap-1 text-gray-400 text-xs">
+                        <IconMusic /> {club.genre}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Tonight's event */}
+                  <div className="mt-2.5 flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 bg-neon-pink/20 border border-neon-pink/40 rounded-xl px-3 py-1.5">
+                      <span className="text-neon-pink"><IconFire /></span>
+                      <span className="text-white text-xs font-bold">{event.name}</span>
                     </div>
-                  )}
+                    <div className="flex items-center gap-1 bg-white/10 border border-white/10 rounded-xl px-2.5 py-1.5">
+                      <span className="text-gray-400"><IconClock /></span>
+                      <span className="text-gray-200 text-xs font-semibold">{event.start_time?.slice(0, 5)}h</span>
+                    </div>
+                  </div>
                 </div>
               </button>
             );
