@@ -153,7 +153,7 @@ export default function Auth() {
             <div>
               <label className="text-gray-400 text-sm mb-2 block">{t('select_language')}</label>
               <div className="flex gap-3">
-                {[['en', 'English'], ['sr', 'Srpski']].map(([val, label]) => (
+                {[['en', 'English'], ['sr', 'Srpski'], ['de', 'Deutsch']].map(([val, label]) => (
                   <button key={val} type="button" onClick={() => { setLang(val); switchLanguage(val); }}
                     className={`flex-1 py-3 rounded-xl border font-semibold transition-all ${
                       lang === val ? 'border-neon-pink text-neon-pink bg-dark-700' : 'border-dark-500 text-gray-400'

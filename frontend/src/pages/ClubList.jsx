@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import api from '../lib/api';
 import { useApp } from '../context/AppContext';
+
+// City display names per language (dative form for SR, etc.)
+const CITY_DISPLAY = {
+  sr: { Belgrade: 'Beogradu', Beograd: 'Beogradu', Novi_Sad: 'Novom Sadu', London: 'Londonu', Berlin: 'Berlinu', Vienna: 'Beču', Zagreb: 'Zagrebu' },
+  de: { Belgrade: 'Belgrad', Beograd: 'Belgrad', London: 'London', Berlin: 'Berlin', Vienna: 'Wien', Zagreb: 'Zagreb' },
+  en: {},
+};
+const cityDisplay = (city, lang) => CITY_DISPLAY[lang]?.[city] || city;
 import Navbar from '../components/Navbar';
 
 const IconPin = () => (
@@ -37,7 +45,7 @@ const IconChevron = () => (
 
 export default function ClubList() {
   const navigate = useNavigate();
-  const { t, checkin, profile } = useApp();
+  const { t, checkin, profile, language } = useApp();
   const [clubs, setClubs] = useState([]);
   const [counts, setCounts] = useState({});
   const [todayEvents, setTodayEvents] = useState({});
@@ -127,7 +135,7 @@ export default function ClubList() {
             onClick={() => setShowCityPicker(v => !v)}
             className="flex items-center gap-1 city-outline hover:opacity-80 transition-opacity"
           >
-            {selectedCity}
+            {cityDisplay(selectedCity, language)}
             <span style={{ WebkitTextFillColor: 'white', color: 'white', filter: 'none', WebkitTextStroke: '0' }}>
               <IconChevron />
             </span>

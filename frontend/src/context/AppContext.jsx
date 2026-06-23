@@ -3,10 +3,11 @@ import { supabase } from '../lib/supabase';
 import api from '../lib/api';
 import en from '../i18n/en';
 import sr from '../i18n/sr';
+import de from '../i18n/de';
 
 const AppContext = createContext(null);
 
-const TRANSLATIONS = { en, sr };
+const TRANSLATIONS = { en, sr, de };
 
 export function AppProvider({ children }) {
   const [session, setSession] = useState(null);
