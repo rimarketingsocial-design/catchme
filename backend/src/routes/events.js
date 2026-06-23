@@ -3,6 +3,25 @@ const router = express.Router();
 const supabase = require('../lib/supabase');
 const { requireAuth } = require('../middleware/auth');
 
+// GET /api/events/today?city=Belgrade — today's events for all clubs in city
+router.get('/today', async (req, res) => {
+  const city = req.query.city || 'Belgrade';
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('events')
+    .select('*, clubs!inner(city)')
+    .eq('date', today)
+    .eq('clubs.city', city);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Return as map: club_id -> event
+  const map = {};
+  (data || []).forEach(e => { map[e.club_id] = e; });
+  res.json(map);
+});
+
 // GET /api/events?club_id=X
 router.get('/', async (req, res) => {
   const { club_id } = req.query;

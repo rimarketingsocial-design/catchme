@@ -10,6 +10,7 @@ export default function ClubList() {
   const { t, checkin, profile } = useApp();
   const [clubs, setClubs] = useState([]);
   const [counts, setCounts] = useState({});
+  const [todayEvents, setTodayEvents] = useState({});
   const [animating, setAnimating] = useState({});
   const [loading, setLoading] = useState(true);
   const prevCounts = useRef({});
@@ -45,9 +46,11 @@ export default function ClubList() {
     Promise.all([
       api.get('/api/clubs?city=Belgrade'),
       api.get('/api/clubs/counts?city=Belgrade'),
-    ]).then(([clubsRes, countsRes]) => {
+      api.get('/api/events/today?city=Belgrade'),
+    ]).then(([clubsRes, countsRes, eventsRes]) => {
       setClubs(clubsRes.data);
       setCounts(countsRes.data);
+      setTodayEvents(eventsRes.data);
       prevCounts.current = countsRes.data;
     }).catch(console.error)
       .finally(() => setLoading(false));
@@ -107,6 +110,7 @@ export default function ClubList() {
             const count = counts[club.id] || 0;
             const isActive = checkin?.club_id === club.id;
             const isAnimating = animating[club.id];
+            const todayEvent = todayEvents[club.id];
 
             return (
               <button
@@ -151,8 +155,14 @@ export default function ClubList() {
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
                   <h3 className="text-white font-black text-xl leading-tight">{club.name}</h3>
                   <p className="text-gray-300 text-sm mt-1">📍 {club.address}</p>
-                  {club.description && (
-                    <p className="text-gray-400 text-xs mt-1 line-clamp-1">{club.description}</p>
+                  {club.genre && (
+                    <p className="text-gray-400 text-xs mt-0.5">🎵 {club.genre}</p>
+                  )}
+                  {todayEvent && (
+                    <div className="mt-2 flex items-center gap-1.5 bg-neon-pink/20 border border-neon-pink/40 rounded-xl px-3 py-1.5 w-fit">
+                      <span className="text-neon-pink text-xs font-bold">🎉 {todayEvent.name}</span>
+                      <span className="text-gray-400 text-xs">· {todayEvent.start_time?.slice(0, 5)}h</span>
+                    </div>
                   )}
                 </div>
               </button>

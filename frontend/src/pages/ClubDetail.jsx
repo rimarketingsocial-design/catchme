@@ -10,6 +10,7 @@ export default function ClubDetail() {
   const { t, profile, checkin, setCheckin } = useApp();
   const [club, setClub] = useState(null);
   const [members, setMembers] = useState([]);
+  const [todayEvent, setTodayEvent] = useState(null);
   const [showCheckin, setShowCheckin] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -19,9 +20,13 @@ export default function ClubDetail() {
     Promise.all([
       api.get(`/api/clubs/${id}`),
       api.get(`/api/clubs/${id}/members`),
-    ]).then(([clubRes, membersRes]) => {
+      api.get(`/api/events?club_id=${id}`),
+    ]).then(([clubRes, membersRes, eventsRes]) => {
       setClub(clubRes.data);
       setMembers(membersRes.data);
+      const today = new Date().toISOString().split('T')[0];
+      const te = (eventsRes.data || []).find(e => e.date === today);
+      setTodayEvent(te || null);
     }).catch(console.error)
       .finally(() => setLoading(false));
   }, [id]);
@@ -70,6 +75,16 @@ export default function ClubDetail() {
       <div className="px-6 -mt-4 relative z-10">
         <h1 className="text-3xl font-black text-white">{club?.name}</h1>
         <p className="text-gray-400 mt-1">📍 {club?.address}</p>
+        {club?.genre && <p className="text-gray-500 text-sm mt-0.5">🎵 {club.genre}</p>}
+        {todayEvent && (
+          <div className="mt-3 flex items-center gap-2 bg-neon-pink/15 border border-neon-pink/30 rounded-2xl px-4 py-2.5">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="text-white font-bold text-sm">{todayEvent.name}</p>
+              <p className="text-neon-pink text-xs font-semibold">Večeras · {todayEvent.start_time?.slice(0, 5)}h</p>
+            </div>
+          </div>
+        )}
         {club?.description && <p className="text-gray-500 text-sm mt-2">{club.description}</p>}
 
         {/* Member count */}

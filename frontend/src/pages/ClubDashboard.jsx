@@ -124,14 +124,20 @@ export default function ClubDashboard() {
               className="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
             />
             <div className="flex gap-2">
-              <input
-                type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} required
-                className="flex-1 bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
-              />
-              <input
-                type="time" value={eventTime} onChange={e => setEventTime(e.target.value)} required
-                className="flex-1 bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
-              />
+              <div className="flex-1">
+                <label className="text-gray-500 text-xs mb-1 block">📅 Datum</label>
+                <input
+                  type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} required
+                  className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-gray-500 text-xs mb-1 block">🕐 Start</label>
+                <input
+                  type="time" value={eventTime} onChange={e => setEventTime(e.target.value)} required
+                  className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
+                />
+              </div>
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-dark-500 text-gray-400 text-sm font-semibold">
