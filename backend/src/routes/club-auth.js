@@ -5,22 +5,20 @@ const { requireAuth } = require('../middleware/auth');
 
 const GENRES = ['House', 'Techno', 'Hip-Hop', 'R&B', 'Pop', 'Latino', 'Turbo-Folk', 'Rock', 'EDM', 'Commercial'];
 
-// POST /api/club-auth/register
-router.post('/register', async (req, res) => {
-  const { email, password, club_name, address, genre, city, photo_url } = req.body;
-  if (!email || !password || !club_name || !address || !genre || !city) {
+// POST /api/club-auth/register — called after Supabase signUp, with the user's JWT
+router.post('/register', requireAuth, async (req, res) => {
+  const { club_name, address, genre, city, photo_url } = req.body;
+  if (!club_name || !address || !genre || !city) {
     return res.status(400).json({ error: 'Sva polja su obavezna' });
   }
 
-  // Create auth user
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-  if (authError) return res.status(400).json({ error: authError.message });
-
-  const userId = authData.user.id;
+  // Check not already registered
+  const { data: existing } = await supabase
+    .from('club_owners')
+    .select('id')
+    .eq('auth_user_id', req.userId)
+    .single();
+  if (existing) return res.status(400).json({ error: 'Već imate registrovan klub' });
 
   // Create club record
   const { data: club, error: clubError } = await supabase
@@ -28,15 +26,12 @@ router.post('/register', async (req, res) => {
     .insert({ name: club_name, address, genre, city, photo_url: photo_url || null })
     .select()
     .single();
-  if (clubError) {
-    await supabase.auth.admin.deleteUser(userId);
-    return res.status(500).json({ error: clubError.message });
-  }
+  if (clubError) return res.status(500).json({ error: clubError.message });
 
   // Link owner to club
   const { error: ownerError } = await supabase
     .from('club_owners')
-    .insert({ auth_user_id: userId, club_id: club.id });
+    .insert({ auth_user_id: req.userId, club_id: club.id });
   if (ownerError) return res.status(500).json({ error: ownerError.message });
 
   res.json({ club });

@@ -42,13 +42,24 @@ export default function ClubRegister() {
     setError('');
     setLoading(true);
     try {
+      // 1. Register with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+      if (authError) throw new Error(authError.message);
+
+      // 2. Upload photo
       const photo_url = await uploadPhoto(clubName);
-      const { data } = await api.post('/api/club-auth/register', {
-        email, password, club_name: clubName, address, genre, city, photo_url,
+
+      // 3. Create club via backend (sends JWT automatically)
+      await api.post('/api/club-auth/register', {
+        club_name: clubName, address, genre, city, photo_url,
       });
+
+      // 4. Sign out so user logs in fresh
+      await supabase.auth.signOut();
       navigate('/club-login?registered=1');
     } catch (err) {
-      setError(err.response?.data?.error || 'Greška pri registraciji');
+      setError(err.response?.data?.error || err.message || 'Greška pri registraciji');
+      await supabase.auth.signOut();
     } finally {
       setLoading(false);
     }
