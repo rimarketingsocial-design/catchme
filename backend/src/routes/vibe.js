@@ -8,24 +8,50 @@ router.get('/', requireAuth, async (req, res) => {
   const { club_id, city } = req.query;
   const now = new Date().toISOString();
 
+  // Step 1: get club_ids for city filter
+  let clubIds = null;
+  if (city && !club_id) {
+    const { data: cityClubs } = await supabase
+      .from('clubs')
+      .select('id')
+      .eq('city', city);
+    clubIds = (cityClubs || []).map(c => c.id);
+    if (clubIds.length === 0) return res.json([]);
+  }
+
+  // Step 2: fetch stories
   let query = supabase
     .from('vibe_stories')
-    .select('*, users!inner(id, name, photo_url, gender), clubs!inner(city), catch_coins(count)')
-    .gt('expires_at', now);
+    .select('*, users(id, name, photo_url)')
+    .gt('expires_at', now)
+    .order('created_at', { ascending: false });
 
   if (club_id) query = query.eq('club_id', club_id);
-  if (city && !club_id) query = query.eq('clubs.city', city);
+  else if (clubIds) query = query.in('club_id', clubIds);
 
-  const { data, error } = await query;
+  const { data: stories, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
+  if (!stories?.length) return res.json([]);
 
-  const stories = (data || []).map(s => ({
+  // Step 3: count coins per story
+  const storyIds = stories.map(s => s.id);
+  const { data: coins } = await supabase
+    .from('catch_coins')
+    .select('story_id')
+    .in('story_id', storyIds);
+
+  const coinMap = {};
+  (coins || []).forEach(c => {
+    coinMap[c.story_id] = (coinMap[c.story_id] || 0) + 1;
+  });
+
+  const result = stories.map(s => ({
     ...s,
-    coin_count: parseInt(s.catch_coins?.[0]?.count || 0),
     user: s.users,
+    coin_count: coinMap[s.id] || 0,
   })).sort((a, b) => b.coin_count - a.coin_count);
 
-  res.json(stories);
+  res.json(result);
 });
 
 // POST /api/vibe — create vibe story
@@ -80,7 +106,6 @@ router.post('/:id/coin', requireAuth, async (req, res) => {
   if (error?.code === '23505') return res.status(400).json({ error: 'Već ste poslali coin' });
   if (error) return res.status(500).json({ error: error.message });
 
-  // Increment total coins on story owner
   await supabase.rpc('increment_coins', { uid: story.user_id });
 
   res.json({ success: true });
