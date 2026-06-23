@@ -3,6 +3,16 @@ const router = express.Router();
 const supabase = require('../lib/supabase');
 const { requireAuth } = require('../middleware/auth');
 
+// GET /api/clubs/cities — distinct cities that have clubs
+router.get('/cities', requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from('clubs')
+    .select('city');
+  if (error) return res.status(500).json({ error: error.message });
+  const cities = [...new Set((data || []).map(c => c.city).filter(Boolean))].sort();
+  res.json(cities);
+});
+
 // GET /api/clubs?city=Belgrade
 router.get('/', requireAuth, async (req, res) => {
   const city = req.query.city || 'Belgrade';
