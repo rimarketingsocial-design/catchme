@@ -243,9 +243,20 @@ export default function Profile() {
             {profile?.bio && (
               <p className="text-gray-400 text-sm mt-3 text-center px-8 leading-relaxed">{profile.bio}</p>
             )}
+
+            {/* Catch Coins */}
+            <div className="mt-4 flex items-center gap-3 bg-yellow-400/10 border border-yellow-400/20 rounded-2xl px-5 py-3">
+              <span className="text-2xl">🪙</span>
+              <div>
+                <p className="text-white font-black text-lg leading-tight">{profile?.catch_coins_total || 0} Catch Coins</p>
+                <p className="text-gray-500 text-xs">
+                  {Math.floor((profile?.catch_coins_total || 0) / 10)} besplatnih poruka dostupno
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="px-6 flex flex-col gap-4">
+          <div className="px-6 flex flex-col gap-4 mt-4">
             {/* Current checkin */}
             {checkin && (
               <div className="bg-dark-800 border border-neon-pink/20 rounded-2xl p-4">

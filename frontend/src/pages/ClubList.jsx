@@ -172,8 +172,8 @@ export default function ClubList() {
         )}
       </div>
 
-      {/* Vibe Stories */}
-      <VibeStories clubId={checkin?.club_id} />
+      {/* Vibe Stories — ispod headera, svi za izabrani grad */}
+      <VibeStories city={selectedCity} />
 
       {loading ? (
         <div className="flex items-center justify-center h-64 text-gray-500">{t('loading')}</div>

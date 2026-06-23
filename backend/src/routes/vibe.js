@@ -3,26 +3,25 @@ const router = express.Router();
 const supabase = require('../lib/supabase');
 const { requireAuth } = require('../middleware/auth');
 
-// GET /api/vibe?club_id=X — active stories sorted by coin count
+// GET /api/vibe?club_id=X&city=Belgrade — active stories sorted by coin count
 router.get('/', requireAuth, async (req, res) => {
-  const { club_id } = req.query;
+  const { club_id, city } = req.query;
   const now = new Date().toISOString();
 
   let query = supabase
     .from('vibe_stories')
-    .select('*, users!inner(id, name, photo_url, gender), catch_coins(count)')
-    .gt('expires_at', now)
-    .order('created_at', { ascending: false });
+    .select('*, users!inner(id, name, photo_url, gender), clubs!inner(city), catch_coins(count)')
+    .gt('expires_at', now);
 
   if (club_id) query = query.eq('club_id', club_id);
+  if (city && !club_id) query = query.eq('clubs.city', city);
 
   const { data, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
 
-  // Count coins per story
   const stories = (data || []).map(s => ({
     ...s,
-    coin_count: s.catch_coins?.[0]?.count || 0,
+    coin_count: parseInt(s.catch_coins?.[0]?.count || 0),
     user: s.users,
   })).sort((a, b) => b.coin_count - a.coin_count);
 
