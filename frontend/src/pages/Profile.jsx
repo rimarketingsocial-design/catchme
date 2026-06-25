@@ -24,6 +24,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [intentionSaving, setIntentionSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [intentionToast, setIntentionToast] = useState('');
   const [intentionLock, setIntentionLock] = useState(null); // { hours_left, minutes_left, unlock_at }
 
@@ -70,6 +71,7 @@ export default function Profile() {
   const handleSave = async () => {
     if (!username.trim()) return;
     setSaving(true);
+    setSaveError('');
     try {
       let photo_url = profile?.photo_url;
       if (photoFile) {
@@ -88,6 +90,8 @@ export default function Profile() {
       setPhotoPreview(null);
       setSuccessMsg(t('profile_saved'));
       setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err) {
+      setSaveError(err.response?.data?.error || err.message || 'Save failed');
     } finally {
       setSaving(false);
     }
@@ -236,6 +240,12 @@ export default function Profile() {
               ))}
             </div>
           </div>
+
+          {saveError && (
+            <div className="bg-red-500/15 border border-red-500/40 rounded-xl px-4 py-3 text-red-400 text-sm text-center">
+              {saveError}
+            </div>
+          )}
 
           {/* Buttons */}
           <div className="flex gap-3">
