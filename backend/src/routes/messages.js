@@ -233,7 +233,12 @@ router.post('/', requireAuth, async (req, res) => {
   const isTestMode = process.env.STRIPE_SECRET_KEY?.includes('placeholder');
 
   if (!isTestMode) {
-    const intent = await stripe.paymentIntents.retrieve(payment_intent_id);
+    let intent;
+    try {
+      intent = await stripe.paymentIntents.retrieve(payment_intent_id);
+    } catch {
+      return res.status(402).json({ error: 'Payment not completed' });
+    }
     if (intent.status !== 'succeeded') {
       return res.status(402).json({ error: 'Payment not completed' });
     }
