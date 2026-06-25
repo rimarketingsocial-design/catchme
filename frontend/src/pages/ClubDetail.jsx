@@ -163,8 +163,8 @@ export default function ClubDetail() {
           </p>
         </div>
 
-        {/* Going to this party scroll */}
-        {goingUsers.length > 0 && (
+        {/* Going to this party scroll — only after check-in */}
+        {isCheckedIn && goingUsers.length > 0 && (
           <div className="mb-5">
             <p className="text-gray-500 text-xs font-semibold mb-2 uppercase tracking-wider">{t('going_to_party')}</p>
             <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
