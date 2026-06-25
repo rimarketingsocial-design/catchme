@@ -3,22 +3,48 @@ const router = express.Router();
 const supabase = require('../lib/supabase');
 const { requireAuth } = require('../middleware/auth');
 
-// GET /api/events/today?city=Belgrade — today's events for all clubs in city
+// GET /api/events/today?city=Belgrade — events visible now (12h before start until end)
 router.get('/today', async (req, res) => {
   const city = req.query.city || 'Belgrade';
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+
+  // Fetch today's and yesterday's events to catch cross-midnight parties
+  const today = now.toISOString().split('T')[0];
+  const yesterday = new Date(now - 86400000).toISOString().split('T')[0];
 
   const { data, error } = await supabase
     .from('events')
     .select('*, clubs!inner(city)')
-    .eq('date', today)
+    .in('date', [today, yesterday])
     .eq('clubs.city', city);
 
   if (error) return res.status(500).json({ error: error.message });
 
-  // Return as map: club_id -> event
   const map = {};
-  (data || []).forEach(e => { map[e.club_id] = e; });
+  (data || []).forEach(e => {
+    if (!e.end_time) {
+      // No end_time — fall back to old date-match behaviour
+      if (e.date === today) map[e.club_id] = e;
+      return;
+    }
+
+    const [sh, sm] = e.start_time.split(':').map(Number);
+    const [eh, em] = e.end_time.split(':').map(Number);
+
+    const startDate = new Date(`${e.date}T${e.start_time}`);
+    let endDate = new Date(`${e.date}T${e.end_time}`);
+    // If end is before start (cross-midnight), push end to next day
+    if (eh < sh || (eh === sh && em < sm)) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
+
+    const visibleFrom = new Date(startDate.getTime() - 12 * 60 * 60 * 1000);
+
+    if (now >= visibleFrom && now <= endDate) {
+      map[e.club_id] = e;
+    }
+  });
+
   res.json(map);
 });
 
@@ -39,7 +65,7 @@ router.get('/', async (req, res) => {
 
 // POST /api/events
 router.post('/', requireAuth, async (req, res) => {
-  const { name, date, start_time } = req.body;
+  const { name, date, start_time, end_time } = req.body;
   if (!name || !date || !start_time) {
     return res.status(400).json({ error: 'name, date i start_time su obavezni' });
   }
@@ -54,7 +80,7 @@ router.post('/', requireAuth, async (req, res) => {
 
   const { data, error } = await supabase
     .from('events')
-    .insert({ club_id: owner.club_id, name, date, start_time })
+    .insert({ club_id: owner.club_id, name, date, start_time, end_time: end_time || null })
     .select()
     .single();
 

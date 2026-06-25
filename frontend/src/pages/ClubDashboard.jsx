@@ -15,6 +15,7 @@ export default function ClubDashboard() {
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [eventTime, setEventTime] = useState('');
+  const [eventEndTime, setEventEndTime] = useState('');
 
   useEffect(() => {
     loadData();
@@ -42,9 +43,10 @@ export default function ClubDashboard() {
         name: eventName,
         date: eventDate,
         start_time: eventTime,
+        end_time: eventEndTime || undefined,
       });
       setEvents(prev => [...prev, data]);
-      setEventName(''); setEventDate(''); setEventTime('');
+      setEventName(''); setEventDate(''); setEventTime(''); setEventEndTime('');
       setShowForm(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Greška');
@@ -131,10 +133,19 @@ export default function ClubDashboard() {
                   className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
                 />
               </div>
+            </div>
+            <div className="flex gap-2">
               <div className="flex-1">
                 <label className="text-gray-500 text-xs mb-1 block">🕐 Start</label>
                 <input
                   type="time" value={eventTime} onChange={e => setEventTime(e.target.value)} required
+                  className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-gray-500 text-xs mb-1 block">🏁 Ends</label>
+                <input
+                  type="time" value={eventEndTime} onChange={e => setEventEndTime(e.target.value)}
                   className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
                 />
               </div>
@@ -163,7 +174,7 @@ export default function ClubDashboard() {
                 <div>
                   <p className="text-white font-bold">{event.name}</p>
                   <p className="text-gray-500 text-sm mt-0.5">
-                    📅 {formatDate(event.date)} · 🕐 {event.start_time?.slice(0, 5)}
+                    📅 {formatDate(event.date)} · 🕐 {event.start_time?.slice(0, 5)}{event.end_time ? ` – ${event.end_time.slice(0, 5)}` : ''}
                   </p>
                 </div>
                 <button
