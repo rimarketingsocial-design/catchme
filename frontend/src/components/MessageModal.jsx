@@ -128,7 +128,8 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
                       navigate(`/chat/${res.data.other_user_id}`);
                       return;
                     }
-                    onSent();
+                    onClose();
+                    navigate(`/chat/${member.user_id}`);
                   } catch (err) {
                     const msg = err.response?.data?.error || '';
                     if (msg.includes('existing') || msg.includes('Payment not completed') || msg.includes('No such payment')) {
