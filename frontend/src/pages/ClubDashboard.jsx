@@ -56,6 +56,11 @@ const IconLogout = () => (
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
   </svg>
 );
+const IconChevron = ({ open }) => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+);
 
 export default function ClubDashboard() {
   const navigate = useNavigate();
@@ -67,35 +72,29 @@ export default function ClubDashboard() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Menu
   const [showMenu, setShowMenu] = useState(false);
-  const [menuView, setMenuView] = useState('main'); // 'main' | 'language' | 'edit'
+  const [showLangPicker, setShowLangPicker] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const menuRef = useRef();
 
-
-  // Edit profile state
   const [editName, setEditName] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [editGenre, setEditGenre] = useState('');
   const [editCity, setEditCity] = useState('');
-  const [editSaving, setEditSaving] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
-  // Event form
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [eventTime, setEventTime] = useState('');
   const [eventEndTime, setEventEndTime] = useState('');
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
-  // Close menu on outside click
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setShowMenu(false);
-        setMenuView('main');
+        setShowLangPicker(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -121,9 +120,7 @@ export default function ClubDashboard() {
     setSaving(true);
     try {
       const { data } = await api.post('/api/events', {
-        name: eventName,
-        date: eventDate,
-        start_time: eventTime,
+        name: eventName, date: eventDate, start_time: eventTime,
         end_time: eventEndTime || undefined,
       });
       setEvents(prev => [...prev, data]);
@@ -151,25 +148,22 @@ export default function ClubDashboard() {
     setEditAddress(club?.address || '');
     setEditGenre(club?.genre || '');
     setEditCity(club?.city || '');
-    setMenuView('edit');
+    setShowEditProfile(true);
+    setShowMenu(false);
   };
 
   const handleSaveProfile = async () => {
     setEditSaving(true);
     try {
       const { data } = await api.patch('/api/club-auth/me', {
-        name: editName.trim(),
-        address: editAddress.trim(),
-        genre: editGenre,
-        city: editCity.trim(),
+        name: editName.trim(), address: editAddress.trim(),
+        genre: editGenre, city: editCity.trim(),
       });
       setClub(data);
-      setShowMenu(false);
-      setMenuView('main');
+      setShowEditProfile(false);
     } catch {}
     setEditSaving(false);
   };
-
 
   const formatDate = (d) => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
@@ -202,115 +196,107 @@ export default function ClubDashboard() {
           {/* Hamburger menu */}
           <div className="relative mt-1" ref={menuRef}>
             <button
-              onClick={() => { setShowMenu(v => !v); setMenuView('main'); }}
+              onClick={() => { setShowMenu(v => !v); setShowLangPicker(false); }}
               className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-dark-700 transition-all"
             >
               <IconMenu />
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-11 w-56 bg-dark-800 border border-dark-600 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                {menuView === 'main' && (
-                  <>
-                    <button
-                      onClick={openEdit}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-white transition-colors text-sm font-medium"
-                    >
-                      <span className="text-neon-pink"><IconEdit /></span>
-                      {t('edit_profile')}
-                    </button>
-                    <div className="border-t border-dark-600" />
-                    <button
-                      onClick={() => setMenuView('language')}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-white transition-colors text-sm font-medium"
-                    >
-                      <span className="text-neon-purple"><IconGlobe /></span>
-                      App Language
-                      <span className="ml-auto text-gray-500 text-xs">{LANGUAGES.find(l => l.code === language)?.flag}</span>
-                    </button>
-                    <div className="border-t border-dark-600" />
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-red-400 transition-colors text-sm font-medium"
-                    >
-                      <span><IconLogout /></span>
-                      {t('sign_out')}
-                    </button>
-                  </>
-                )}
+              <div className="absolute right-0 top-11 w-56 bg-dark-800 border border-dark-600 rounded-2xl shadow-2xl z-50">
+                {/* Edit Profile */}
+                <button
+                  onClick={openEdit}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-white transition-colors text-sm font-medium rounded-t-2xl"
+                >
+                  <span className="text-neon-pink"><IconEdit /></span>
+                  {t('edit_profile')}
+                </button>
 
-                {menuView === 'language' && (
-                  <>
-                    <div className="flex items-center gap-2 px-4 py-3 border-b border-dark-600">
-                      <button onClick={() => setMenuView('main')} className="text-gray-500 hover:text-white transition-colors">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                      </button>
-                      <span className="text-white text-sm font-semibold">App Language</span>
-                    </div>
+                <div className="border-t border-dark-600" />
+
+                {/* App Language toggle */}
+                <button
+                  onClick={() => setShowLangPicker(v => !v)}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-white transition-colors text-sm font-medium"
+                >
+                  <span className="text-neon-purple"><IconGlobe /></span>
+                  App Language
+                  <span className="ml-auto flex items-center gap-1.5 text-gray-400 text-xs">
+                    {LANGUAGES.find(l => l.code === language)?.flag}
+                    <IconChevron open={showLangPicker} />
+                  </span>
+                </button>
+
+                {/* Language options — expand inline */}
+                {showLangPicker && (
+                  <div className="border-t border-dark-600/40">
                     {LANGUAGES.map(lang => (
                       <button
                         key={lang.code}
-                        onClick={() => { switchLanguage(lang.code); setMenuView('main'); }}
-                        className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors ${
+                        onClick={() => { switchLanguage(lang.code); setShowLangPicker(false); setShowMenu(false); }}
+                        className={`w-full flex items-center gap-3 px-6 py-3 text-sm transition-colors ${
                           language === lang.code
-                            ? 'text-white bg-neon-pink/15'
-                            : 'text-gray-300 hover:bg-dark-700 hover:text-white'
+                            ? 'text-white font-semibold bg-neon-pink/10'
+                            : 'text-gray-400 hover:text-white hover:bg-dark-700'
                         }`}
                       >
                         <span>{lang.flag}</span>
                         {lang.label}
-                        {clubLang === lang.code && <span className="ml-auto text-neon-pink text-xs">✓</span>}
+                        {language === lang.code && <span className="ml-auto text-neon-pink">✓</span>}
                       </button>
                     ))}
-                  </>
+                  </div>
                 )}
 
-                {menuView === 'edit' && (
-                  <>
-                    <div className="flex items-center gap-2 px-4 py-3 border-b border-dark-600">
-                      <button onClick={() => setMenuView('main')} className="text-gray-500 hover:text-white transition-colors">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                      </button>
-                      <span className="text-white text-sm font-semibold">Edit Profile</span>
-                    </div>
-                    <div className="p-4 flex flex-col gap-3">
-                      <input
-                        value={editName} onChange={e => setEditName(e.target.value)}
-                        placeholder="Club name"
-                        className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
-                      />
-                      <input
-                        value={editAddress} onChange={e => setEditAddress(e.target.value)}
-                        placeholder="Address"
-                        className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
-                      />
-                      <input
-                        value={editCity} onChange={e => setEditCity(e.target.value)}
-                        placeholder="City"
-                        className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
-                      />
-                      <select
-                        value={editGenre} onChange={e => setEditGenre(e.target.value)}
-                        className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
-                      >
-                        <option value="">Select genre</option>
-                        {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
-                      </select>
-                      <button
-                        onClick={handleSaveProfile}
-                        disabled={editSaving}
-                        className="w-full py-2 rounded-xl bg-neon-gradient text-white text-sm font-bold disabled:opacity-40"
-                      >
-                        {editSaving ? '...' : t('save')}
-                      </button>
-                    </div>
-                  </>
-                )}
+                <div className="border-t border-dark-600" />
+
+                {/* Sign Out */}
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-red-400 transition-colors text-sm font-medium rounded-b-2xl"
+                >
+                  <span><IconLogout /></span>
+                  {t('sign_out')}
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Edit Profile modal */}
+      {showEditProfile && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm px-4 pb-10">
+          <div className="w-full max-w-sm bg-dark-800 border border-dark-600 rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-bold text-lg">{t('edit_profile')}</h3>
+              <button onClick={() => setShowEditProfile(false)} className="text-gray-500 hover:text-white text-xl">✕</button>
+            </div>
+            <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Club name"
+              className="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors" />
+            <input value={editAddress} onChange={e => setEditAddress(e.target.value)} placeholder="Address"
+              className="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors" />
+            <input value={editCity} onChange={e => setEditCity(e.target.value)} placeholder="City"
+              className="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors" />
+            <select value={editGenre} onChange={e => setEditGenre(e.target.value)}
+              className="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]">
+              <option value="">Select genre</option>
+              {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <div className="flex gap-3">
+              <button onClick={() => setShowEditProfile(false)}
+                className="flex-1 py-3 rounded-2xl border border-dark-500 text-gray-400 font-semibold">
+                {t('cancel')}
+              </button>
+              <button onClick={handleSaveProfile} disabled={editSaving}
+                className="flex-1 py-3 rounded-2xl bg-neon-gradient text-white font-bold disabled:opacity-40">
+                {editSaving ? '...' : t('save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Club photo */}
       {club?.photo_url && (
@@ -323,61 +309,51 @@ export default function ClubDashboard() {
       <div className="px-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-bold text-lg">{t('events')}</h2>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="text-sm bg-neon-gradient text-white font-semibold px-4 py-2 rounded-xl"
-          >
+          <button onClick={() => setShowForm(!showForm)}
+            className="text-sm bg-neon-gradient text-white font-semibold px-4 py-2 rounded-xl">
             {t('add_event')}
           </button>
         </div>
 
-        {/* Add event form */}
         {showForm && (
           <form onSubmit={handleAddEvent} className="bg-dark-800 border border-neon-pink/20 rounded-2xl p-4 mb-4 flex flex-col gap-3">
             <h3 className="text-white font-semibold text-sm">{t('new_event')}</h3>
             {error && <p className="text-red-400 text-xs">{error}</p>}
-            <input
-              value={eventName} onChange={e => setEventName(e.target.value)} required
+            <input value={eventName} onChange={e => setEventName(e.target.value)} required
               placeholder={t('party_name')}
-              className="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
-            />
+              className="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors" />
             <div className="flex gap-2">
               <div className="flex-1">
                 <label className="text-gray-500 text-xs mb-1 flex items-center gap-1"><span className="text-neon-pink opacity-70"><IconCalendar /></span> Date</label>
-                <input
-                  type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} required
-                  className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
-                />
+                <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} required
+                  className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]" />
               </div>
             </div>
             <div className="flex gap-2">
               <div className="flex-1">
                 <label className="text-gray-500 text-xs mb-1 flex items-center gap-1"><span className="text-neon-purple opacity-70"><IconClock /></span> Start</label>
-                <input
-                  type="time" value={eventTime} onChange={e => setEventTime(e.target.value)} required
-                  className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
-                />
+                <input type="time" value={eventTime} onChange={e => setEventTime(e.target.value)} required
+                  className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]" />
               </div>
               <div className="flex-1">
                 <label className="text-gray-500 text-xs mb-1 flex items-center gap-1"><span className="text-gray-500 opacity-70"><IconClock /></span> Ends</label>
-                <input
-                  type="time" value={eventEndTime} onChange={e => setEventEndTime(e.target.value)}
-                  className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
-                />
+                <input type="time" value={eventEndTime} onChange={e => setEventEndTime(e.target.value)}
+                  className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]" />
               </div>
             </div>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-dark-500 text-gray-400 text-sm font-semibold">
+              <button type="button" onClick={() => setShowForm(false)}
+                className="flex-1 py-2.5 rounded-xl border border-dark-500 text-gray-400 text-sm font-semibold">
                 {t('cancel')}
               </button>
-              <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-neon-gradient text-white text-sm font-bold disabled:opacity-40">
+              <button type="submit" disabled={saving}
+                className="flex-1 py-2.5 rounded-xl bg-neon-gradient text-white text-sm font-bold disabled:opacity-40">
                 {saving ? '...' : t('save')}
               </button>
             </div>
           </form>
         )}
 
-        {/* Events list */}
         {events.length === 0 ? (
           <div className="text-center py-12 text-gray-600">
             <div className="w-14 h-14 rounded-full bg-dark-800 border border-dark-600 flex items-center justify-center mx-auto mb-3">
@@ -405,10 +381,8 @@ export default function ClubDashboard() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(event.id)}
-                  className="text-gray-600 hover:text-red-400 transition-colors ml-4 p-1"
-                >
+                <button onClick={() => handleDelete(event.id)}
+                  className="text-gray-600 hover:text-red-400 transition-colors ml-4 p-1">
                   <IconTrash />
                 </button>
               </div>
