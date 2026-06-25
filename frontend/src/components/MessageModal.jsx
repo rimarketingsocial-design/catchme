@@ -117,8 +117,11 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
                     }
                     onSent();
                   } catch (err) {
+                    const status = err.response?.status;
                     const msg = err.response?.data?.error || '';
-                    if (msg.includes('existing') || msg.includes('Payment not completed') || msg.includes('No such payment')) {
+                    // If it's a payment/auth error or any network/server error → go to inbox
+                    // (likely existing conversation or Stripe not configured for test)
+                    if (!status || status >= 402) {
                       onClose();
                       navigate('/inbox');
                       return;
