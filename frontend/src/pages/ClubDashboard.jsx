@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import api from '../lib/api';
+import { useApp } from '../context/AppContext';
 
 const GENRES = ['House', 'Techno', 'Hip-Hop', 'R&B', 'Pop', 'Latino', 'Turbo-Folk', 'Rock', 'EDM', 'Commercial'];
 const LANGUAGES = [
@@ -58,6 +59,7 @@ const IconLogout = () => (
 
 export default function ClubDashboard() {
   const navigate = useNavigate();
+  const { language, switchLanguage } = useApp();
   const [club, setClub] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,8 +72,6 @@ export default function ClubDashboard() {
   const [menuView, setMenuView] = useState('main'); // 'main' | 'language' | 'edit'
   const menuRef = useRef();
 
-  // Club language (stored locally for club dashboard)
-  const [clubLang, setClubLang] = useState(() => localStorage.getItem('club_lang') || 'en');
 
   // Edit profile state
   const [editName, setEditName] = useState('');
@@ -170,10 +170,6 @@ export default function ClubDashboard() {
     setEditSaving(false);
   };
 
-  const switchLang = (code) => {
-    setClubLang(code);
-    localStorage.setItem('club_lang', code);
-  };
 
   const formatDate = (d) => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
@@ -230,7 +226,7 @@ export default function ClubDashboard() {
                     >
                       <span className="text-neon-purple"><IconGlobe /></span>
                       App Language
-                      <span className="ml-auto text-gray-500 text-xs">{LANGUAGES.find(l => l.code === clubLang)?.flag}</span>
+                      <span className="ml-auto text-gray-500 text-xs">{LANGUAGES.find(l => l.code === language)?.flag}</span>
                     </button>
                     <div className="border-t border-dark-600" />
                     <button
@@ -254,9 +250,9 @@ export default function ClubDashboard() {
                     {LANGUAGES.map(lang => (
                       <button
                         key={lang.code}
-                        onClick={() => { switchLang(lang.code); setMenuView('main'); }}
+                        onClick={() => { switchLanguage(lang.code); setMenuView('main'); }}
                         className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors ${
-                          clubLang === lang.code
+                          language === lang.code
                             ? 'text-white bg-neon-pink/15'
                             : 'text-gray-300 hover:bg-dark-700 hover:text-white'
                         }`}
