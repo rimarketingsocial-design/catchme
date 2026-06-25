@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 
 export default function Splash() {
   const navigate = useNavigate();
-  const { t, switchLanguage, language } = useApp();
+  const { t } = useApp();
 
   return (
     <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-between px-6 py-12 overflow-hidden relative">
@@ -11,25 +11,6 @@ export default function Splash() {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-neon-pink opacity-10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 left-1/3 w-64 h-64 bg-neon-purple opacity-10 rounded-full blur-3xl" />
-      </div>
-
-      {/* Language toggle */}
-      <div className="w-full flex justify-end relative z-10">
-        <div className="flex bg-dark-700 rounded-full p-1 gap-1">
-          {['en', 'sr'].map(lang => (
-            <button
-              key={lang}
-              onClick={() => switchLanguage(lang)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
-                language === lang
-                  ? 'bg-neon-gradient text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              {lang === 'en' ? 'EN' : 'SR'}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Logo + tagline */}
