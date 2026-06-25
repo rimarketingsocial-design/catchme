@@ -27,12 +27,15 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: `type must be one of: ${VALID_TYPES.join(', ')}` });
   }
 
-  // Check existing intention and 12h lock
-  const { data: existing } = await supabase
+  // Check existing intention and 12h lock (use limit(1) to avoid multi-row errors)
+  const { data: existingRows } = await supabase
     .from('intentions')
-    .select('type, updated_at')
+    .select('id, type, updated_at')
     .eq('user_id', req.userId)
-    .maybeSingle();
+    .order('updated_at', { ascending: false })
+    .limit(1);
+
+  const existing = existingRows?.[0] || null;
 
   if (existing?.updated_at) {
     const updatedAt = new Date(existing.updated_at);
@@ -52,11 +55,22 @@ router.post('/', requireAuth, async (req, res) => {
     }
   }
 
-  const { data, error } = await supabase
-    .from('intentions')
-    .upsert({ user_id: req.userId, type, updated_at: new Date().toISOString() })
-    .select()
-    .single();
+  // Update existing row if exists, otherwise insert
+  let data, error;
+  if (existing) {
+    ({ data, error } = await supabase
+      .from('intentions')
+      .update({ type, updated_at: new Date().toISOString() })
+      .eq('id', existing.id)
+      .select()
+      .single());
+  } else {
+    ({ data, error } = await supabase
+      .from('intentions')
+      .insert({ user_id: req.userId, type, updated_at: new Date().toISOString() })
+      .select()
+      .single());
+  }
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
