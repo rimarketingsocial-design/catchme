@@ -26,18 +26,6 @@ export default function Splash() {
         <p className="text-2xl font-bold text-white mb-3">{t('splash_tagline')}</p>
         <p className="text-gray-400 text-base max-w-xs">{t('splash_sub')}</p>
 
-        {/* Animated club icons */}
-        <div className="flex gap-6 mt-10 text-4xl">
-          {['🎵', '🍾', '✨', '💃', '🎶'].map((emoji, i) => (
-            <span
-              key={i}
-              className="animate-bounce"
-              style={{ animationDelay: `${i * 0.15}s`, animationDuration: '2s' }}
-            >
-              {emoji}
-            </span>
-          ))}
-        </div>
       </div>
 
       {/* CTA buttons */}
@@ -59,7 +47,7 @@ export default function Splash() {
             onClick={() => navigate('/club-register')}
             className="text-gray-500 text-sm hover:text-neon-pink transition-colors"
           >
-            Imaš klub? <span className="text-neon-pink font-semibold">Napravi nalog</span>
+            Have a club? <span className="text-neon-pink font-semibold">Create account</span>
           </button>
         </div>
       </div>
