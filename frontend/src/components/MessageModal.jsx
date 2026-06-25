@@ -100,7 +100,7 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
             {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.includes('placeholder') ? (
               <button
                 onClick={async () => {
-                  if (!content.trim()) return setError('Upiši poruku prvo');
+                  if (!content.trim()) return setError('Write a message first');
                   setLoading(true);
                   try {
                     const res = await api.post('/api/messages', {
@@ -117,7 +117,13 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
                     }
                     onSent();
                   } catch (err) {
-                    setError(err.response?.data?.error || t('error'));
+                    const msg = err.response?.data?.error || '';
+                    if (msg.includes('existing') || msg.includes('Payment not completed') || msg.includes('No such payment')) {
+                      onClose();
+                      navigate('/inbox');
+                      return;
+                    }
+                    setError(msg || t('error'));
                   } finally {
                     setLoading(false);
                   }
@@ -125,7 +131,7 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
                 disabled={loading || !content.trim()}
                 className="w-full py-4 rounded-2xl bg-neon-gradient text-white font-bold text-lg disabled:opacity-50"
               >
-                {loading ? t('loading') : `🧪 Test Pošalji (${price} - bez plaćanja)`}
+                {loading ? 'Sending...' : `🧪 Test Send (${price} - no payment)`}
               </button>
             ) : (
               <button
