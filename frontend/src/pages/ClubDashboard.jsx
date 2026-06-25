@@ -59,7 +59,7 @@ const IconLogout = () => (
 
 export default function ClubDashboard() {
   const navigate = useNavigate();
-  const { language, switchLanguage } = useApp();
+  const { t, language, switchLanguage } = useApp();
   const [club, setClub] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -217,7 +217,7 @@ export default function ClubDashboard() {
                       className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-white transition-colors text-sm font-medium"
                     >
                       <span className="text-neon-pink"><IconEdit /></span>
-                      Edit Profile
+                      {t('edit_profile')}
                     </button>
                     <div className="border-t border-dark-600" />
                     <button
@@ -234,7 +234,7 @@ export default function ClubDashboard() {
                       className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-red-400 transition-colors text-sm font-medium"
                     >
                       <span><IconLogout /></span>
-                      Sign Out
+                      {t('sign_out')}
                     </button>
                   </>
                 )}
@@ -301,7 +301,7 @@ export default function ClubDashboard() {
                         disabled={editSaving}
                         className="w-full py-2 rounded-xl bg-neon-gradient text-white text-sm font-bold disabled:opacity-40"
                       >
-                        {editSaving ? '...' : 'Save'}
+                        {editSaving ? '...' : t('save')}
                       </button>
                     </div>
                   </>
@@ -322,23 +322,23 @@ export default function ClubDashboard() {
       {/* Events section */}
       <div className="px-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white font-bold text-lg">Events</h2>
+          <h2 className="text-white font-bold text-lg">{t('events')}</h2>
           <button
             onClick={() => setShowForm(!showForm)}
             className="text-sm bg-neon-gradient text-white font-semibold px-4 py-2 rounded-xl"
           >
-            + Add
+            {t('add_event')}
           </button>
         </div>
 
         {/* Add event form */}
         {showForm && (
           <form onSubmit={handleAddEvent} className="bg-dark-800 border border-neon-pink/20 rounded-2xl p-4 mb-4 flex flex-col gap-3">
-            <h3 className="text-white font-semibold text-sm">New Event</h3>
+            <h3 className="text-white font-semibold text-sm">{t('new_event')}</h3>
             {error && <p className="text-red-400 text-xs">{error}</p>}
             <input
               value={eventName} onChange={e => setEventName(e.target.value)} required
-              placeholder="Party name"
+              placeholder={t('party_name')}
               className="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
             />
             <div className="flex gap-2">
@@ -368,10 +368,10 @@ export default function ClubDashboard() {
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-dark-500 text-gray-400 text-sm font-semibold">
-                Cancel
+                {t('cancel')}
               </button>
               <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-neon-gradient text-white text-sm font-bold disabled:opacity-40">
-                {saving ? '...' : 'Save'}
+                {saving ? '...' : t('save')}
               </button>
             </div>
           </form>
@@ -385,7 +385,7 @@ export default function ClubDashboard() {
                 <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/>
               </svg>
             </div>
-            <p>No events yet. Add the first one!</p>
+            <p>{t('no_events')}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

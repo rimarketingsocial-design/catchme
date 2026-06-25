@@ -93,6 +93,16 @@ export default {
   vibe_be_first: 'Be the first to post a Vibe',
   checked_in_live: 'Live',
 
+  // Club dashboard
+  events: 'Events',
+  add_event: '+ Add',
+  new_event: 'New Event',
+  party_name: 'Party name',
+  no_events: 'No events yet. Add the first one!',
+  sign_out: 'Sign Out',
+  edit_profile: 'Edit Profile',
+  save: 'Save',
+
   // Going / In the club
   going_to: 'Going to',
   in_the_club: 'In the club',

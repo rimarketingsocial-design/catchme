@@ -93,6 +93,16 @@ export default {
   vibe_be_first: 'Budi prvi/a koji objavljuje Vibe',
   checked_in_live: 'Live',
 
+  // Club dashboard
+  events: 'Događaji',
+  add_event: '+ Dodaj',
+  new_event: 'Novi događaj',
+  party_name: 'Naziv žurke',
+  no_events: 'Nema događaja. Dodaj prvi!',
+  sign_out: 'Odjavi se',
+  edit_profile: 'Uredi profil',
+  save: 'Sačuvaj',
+
   // Going / In the club
   going_to: 'Ide u',
   in_the_club: 'U klubu',
