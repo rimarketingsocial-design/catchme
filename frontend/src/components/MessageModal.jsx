@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -35,6 +35,19 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
 
   const intention = member.intention || 'poznanstvo';
   const price = PRICES[intention];
+
+  // On open: if conversation already exists, go straight to chat
+  useEffect(() => {
+    api.get('/api/messages/conversations')
+      .then(r => {
+        const existing = (r.data || []).find(c => c.other_user_id === member.user_id);
+        if (existing) {
+          onClose();
+          navigate(`/chat/${member.user_id}`);
+        }
+      })
+      .catch(() => {});
+  }, [member.user_id]);
 
   const initPayment = async () => {
     if (!content.trim()) return setError('Please write a message first');
@@ -117,13 +130,10 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
                     }
                     onSent();
                   } catch (err) {
-                    const status = err.response?.status;
                     const msg = err.response?.data?.error || '';
-                    // If it's a payment/auth error or any network/server error → go to inbox
-                    // (likely existing conversation or Stripe not configured for test)
-                    if (!status || status >= 402) {
+                    if (msg.includes('existing') || msg.includes('Payment not completed') || msg.includes('No such payment')) {
                       onClose();
-                      navigate('/inbox');
+                      navigate(`/chat/${member.user_id}`);
                       return;
                     }
                     setError(msg || t('error'));
