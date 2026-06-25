@@ -93,6 +93,17 @@ export default {
   vibe_be_first: 'Budi prvi/a koji objavljuje Vibe',
   checked_in_live: 'Live',
 
+  // Going / In the club
+  going_to: 'Ide u',
+  in_the_club: 'U klubu',
+  going_to_party: 'Ide na ovu žurku',
+  are_you_in_club: 'Jesi li u klubu?',
+  yes_im_in: 'Da, tu sam!',
+  not_yet: 'Još ne',
+  language: 'Jezik',
+  app_language: 'Jezik aplikacije',
+  german: 'Njemački',
+
   // Misc
   loading: 'Učitavanje...',
   error: 'Nešto je pošlo naopako',

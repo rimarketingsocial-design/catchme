@@ -93,6 +93,17 @@ export default {
   vibe_be_first: 'Sei der Erste mit einem Vibe',
   checked_in_live: 'Live',
 
+  // Going / In the club
+  going_to: 'Geht zu',
+  in_the_club: 'Im Club',
+  going_to_party: 'Geht zu dieser Party',
+  are_you_in_club: 'Bist du im Club?',
+  yes_im_in: 'Ja, ich bin da!',
+  not_yet: 'Noch nicht',
+  language: 'Sprache',
+  app_language: 'App-Sprache',
+  german: 'Deutsch',
+
   // Misc
   loading: 'Laden...',
   error: 'Etwas ist schiefgelaufen',

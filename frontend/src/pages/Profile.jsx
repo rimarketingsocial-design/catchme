@@ -5,6 +5,12 @@ import api from '../lib/api';
 import { useApp } from '../context/AppContext';
 import Navbar from '../components/Navbar';
 
+const LANGUAGES = [
+  { code: 'en', flag: '🇬🇧', label: 'English' },
+  { code: 'sr', flag: '🇷🇸', label: 'Srpski' },
+  { code: 'de', flag: '🇩🇪', label: 'Deutsch' },
+];
+
 const INTENTIONS = [
   { type: 'poznanstvo', emoji: '👋', color: 'border-blue-500 text-blue-400' },
   { type: 'veza', emoji: '❤️', color: 'border-rose-500 text-rose-400' },
@@ -13,7 +19,7 @@ const INTENTIONS = [
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { t, profile, fetchProfile, logout, checkin } = useApp();
+  const { t, profile, fetchProfile, logout, checkin, language, switchLanguage } = useApp();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [intentionSaving, setIntentionSaving] = useState(false);
@@ -74,6 +80,7 @@ export default function Profile() {
         name: username.trim(),
         bio: bio.trim(),
         photo_url,
+        language,
       });
       await fetchProfile();
       setEditing(false);
@@ -206,6 +213,28 @@ export default function Profile() {
                 focus:outline-none focus:border-neon-pink transition-colors resize-none text-sm"
             />
             <p className="text-gray-600 text-xs text-right mt-1">{bio.length}/160</p>
+          </div>
+
+          {/* Language picker */}
+          <div>
+            <label className="text-gray-400 text-sm mb-2 block">{t('app_language')}</label>
+            <div className="flex gap-2">
+              {LANGUAGES.map(lang => (
+                <button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => switchLanguage(lang.code)}
+                  className={`flex-1 py-2.5 rounded-xl border text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                    language === lang.code
+                      ? 'border-neon-pink bg-neon-pink/15 text-white'
+                      : 'border-dark-500 text-gray-500 hover:border-gray-400'
+                  }`}
+                >
+                  <span>{lang.flag}</span>
+                  <span>{lang.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Buttons */}
