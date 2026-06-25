@@ -230,7 +230,7 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(200).json({ existing: true, other_user_id: receiver_id });
   }
 
-  const isTestMode = process.env.STRIPE_SECRET_KEY?.includes('placeholder');
+  const isTestMode = process.env.STRIPE_SECRET_KEY?.includes('placeholder') || payment_intent_id.startsWith('test_');
 
   if (!isTestMode) {
     let intent;
