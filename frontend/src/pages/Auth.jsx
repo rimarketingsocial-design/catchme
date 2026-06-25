@@ -3,12 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import api from '../lib/api';
 import { useApp } from '../context/AppContext';
+import enStrings from '../i18n/en';
 
 export default function Auth() {
   const [params] = useSearchParams();
   const isRegister = params.get('mode') !== 'login';
   const navigate = useNavigate();
-  const { t, switchLanguage, fetchProfile } = useApp();
+  const { switchLanguage, fetchProfile } = useApp();
+  const t = (key) => enStrings[key] || key;
 
   const [step, setStep] = useState(1); // 1=credentials, 2=profile
   const [email, setEmail] = useState('');
