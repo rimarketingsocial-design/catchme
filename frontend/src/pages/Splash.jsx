@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import en from '../i18n/en';
 
 export default function Splash() {
   const navigate = useNavigate();
-  const { t } = useApp();
+  const t = (key) => en[key] || key;
 
   return (
     <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-between px-6 py-12 overflow-hidden relative">
