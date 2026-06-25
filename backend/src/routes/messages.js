@@ -218,6 +218,18 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Invalid intention_type' });
   }
 
+  // Check if conversation already exists — skip payment entirely if so
+  const { data: existingConvo } = await supabase
+    .from('messages')
+    .select('id')
+    .or(`and(sender_id.eq.${req.userId},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${req.userId})`)
+    .eq('payment_status', 'paid')
+    .limit(1);
+
+  if (existingConvo?.length) {
+    return res.status(200).json({ existing: true, other_user_id: receiver_id });
+  }
+
   const isTestMode = process.env.STRIPE_SECRET_KEY?.includes('placeholder');
 
   if (!isTestMode) {
@@ -239,18 +251,6 @@ router.post('/', requireAuth, async (req, res) => {
       status: 'succeeded',
       metadata: { receiver_id, club_id, intention_type },
     });
-  }
-
-  // Check if conversation already exists — return existing instead of creating duplicate
-  const { data: existingConvo } = await supabase
-    .from('messages')
-    .select('id')
-    .or(`and(sender_id.eq.${req.userId},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${req.userId})`)
-    .eq('payment_status', 'paid')
-    .limit(1);
-
-  if (existingConvo?.length) {
-    return res.status(200).json({ existing: true, other_user_id: receiver_id });
   }
 
   // Create message
