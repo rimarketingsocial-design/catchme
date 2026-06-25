@@ -61,7 +61,7 @@ export default function App() {
             <Route path="/clubs/:id" element={<ProtectedRoute><ClubDetail /></ProtectedRoute>} />
             <Route path="/clubs/:id/swipe" element={<ProtectedRoute><Swipe /></ProtectedRoute>} />
             <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
-            <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/chat/:otherId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
             <Route path="/society" element={<ProtectedRoute><Society /></ProtectedRoute>} />

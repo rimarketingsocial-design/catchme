@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../lib/api';
@@ -25,6 +26,7 @@ const INTENTION_STYLES = {
 
 export default function MessageModal({ member, clubId, onClose, onSent }) {
   const { t } = useApp();
+  const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [clientSecret, setClientSecret] = useState(null);
   const [paymentIntentId, setPaymentIntentId] = useState(null);
@@ -101,13 +103,18 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
                   if (!content.trim()) return setError('Upiši poruku prvo');
                   setLoading(true);
                   try {
-                    await api.post('/api/messages', {
+                    const res = await api.post('/api/messages', {
                       receiver_id: member.user_id,
                       club_id: clubId,
                       content,
                       intention_type: intention,
                       payment_intent_id: 'test_' + Date.now(),
                     });
+                    if (res.data?.existing) {
+                      onClose();
+                      navigate(`/chat/${res.data.other_user_id}`);
+                      return;
+                    }
                     onSent();
                   } catch (err) {
                     setError(err.response?.data?.error || t('error'));
@@ -140,6 +147,8 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
               paymentIntentId={paymentIntentId}
               price={price}
               onSent={onSent}
+              onClose={onClose}
+              navigate={navigate}
               t={t}
             />
           </Elements>
@@ -153,7 +162,7 @@ export default function MessageModal({ member, clubId, onClose, onSent }) {
   );
 }
 
-function MessagePaymentForm({ member, clubId, content, intention, paymentIntentId, price, onSent, t }) {
+function MessagePaymentForm({ member, clubId, content, intention, paymentIntentId, price, onSent, onClose, navigate, t }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -176,7 +185,7 @@ function MessagePaymentForm({ member, clubId, content, intention, paymentIntentI
         return;
       }
 
-      await api.post('/api/messages', {
+      const res = await api.post('/api/messages', {
         receiver_id: member.user_id,
         club_id: clubId,
         content,
@@ -184,6 +193,11 @@ function MessagePaymentForm({ member, clubId, content, intention, paymentIntentI
         payment_intent_id: paymentIntentId,
       });
 
+      if (res.data?.existing) {
+        onClose();
+        navigate(`/chat/${res.data.other_user_id}`);
+        return;
+      }
       onSent();
     } catch (err) {
       setError(err.response?.data?.error || t('error'));

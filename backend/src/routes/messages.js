@@ -10,6 +10,129 @@ const MESSAGE_PRICES = {
   avantura: 300,   // $3.00
 };
 
+// GET /api/messages/conversations — grouped by other user (for both genders)
+router.get('/conversations', requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from('messages')
+    .select(`
+      id, content, intention_type, read, created_at, sender_id, receiver_id,
+      sender:sender_id(id, name, photo_url),
+      receiver:receiver_id(id, name, photo_url),
+      club:club_id(id, name)
+    `)
+    .or(`sender_id.eq.${req.userId},receiver_id.eq.${req.userId}`)
+    .eq('payment_status', 'paid')
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const map = new Map();
+  for (const msg of data) {
+    const isMe = msg.sender_id === req.userId;
+    const otherId = isMe ? msg.receiver_id : msg.sender_id;
+    const other = isMe ? msg.receiver : msg.sender;
+
+    if (!map.has(otherId)) {
+      map.set(otherId, {
+        other_user_id: otherId,
+        other_user: other,
+        latest_content: msg.content,
+        latest_time: msg.created_at,
+        intention_type: msg.intention_type,
+        club: msg.club,
+        unread_count: 0,
+        message_count: 0,
+      });
+    }
+    const conv = map.get(otherId);
+    conv.message_count++;
+    if (!msg.read && msg.receiver_id === req.userId) conv.unread_count++;
+  }
+
+  res.json([...map.values()]);
+});
+
+// GET /api/messages/thread/:other_id — all messages between two users
+router.get('/thread/:other_id', requireAuth, async (req, res) => {
+  const otherId = req.params.other_id;
+
+  const { data, error } = await supabase
+    .from('messages')
+    .select(`
+      id, content, sender_id, receiver_id, intention_type, read, created_at,
+      club:club_id(id, name),
+      sender:sender_id(id, name, photo_url),
+      receiver:receiver_id(id, name, photo_url)
+    `)
+    .or(`and(sender_id.eq.${req.userId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${req.userId})`)
+    .eq('payment_status', 'paid')
+    .order('created_at', { ascending: true });
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Mark as read
+  await supabase
+    .from('messages')
+    .update({ read: true })
+    .eq('receiver_id', req.userId)
+    .eq('sender_id', otherId)
+    .eq('read', false);
+
+  const other = data.find(m => m.sender_id === otherId)?.sender
+    || data.find(m => m.receiver_id === otherId)?.receiver;
+
+  res.json({ messages: data, other_user: other });
+});
+
+// POST /api/messages/reply-to/:other_id — free reply in existing conversation
+router.post('/reply-to/:other_id', requireAuth, async (req, res) => {
+  const otherId = req.params.other_id;
+  const { content } = req.body;
+  if (!content?.trim()) return res.status(400).json({ error: 'content is required' });
+
+  const { data: existing } = await supabase
+    .from('messages')
+    .select('id, club_id, intention_type')
+    .or(`and(sender_id.eq.${req.userId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${req.userId})`)
+    .eq('payment_status', 'paid')
+    .limit(1);
+
+  if (!existing?.length) return res.status(403).json({ error: 'No existing conversation' });
+
+  const orig = existing[0];
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      sender_id: req.userId,
+      receiver_id: otherId,
+      club_id: orig.club_id,
+      content: content.trim(),
+      intention_type: orig.intention_type,
+      payment_status: 'paid',
+    })
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const { checkSociety } = require('./society');
+  checkSociety(req.userId, otherId, orig.club_id).catch(() => {});
+
+  res.json(data);
+});
+
+// DELETE /api/messages/conversation/:other_id — delete entire conversation
+router.delete('/conversation/:other_id', requireAuth, async (req, res) => {
+  const otherId = req.params.other_id;
+  const { error } = await supabase
+    .from('messages')
+    .delete()
+    .or(`and(sender_id.eq.${req.userId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${req.userId})`);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true });
+});
+
 // GET /api/messages/inbox — female inbox
 router.get('/inbox', requireAuth, async (req, res) => {
   const { data, error } = await supabase
@@ -116,6 +239,18 @@ router.post('/', requireAuth, async (req, res) => {
       status: 'succeeded',
       metadata: { receiver_id, club_id, intention_type },
     });
+  }
+
+  // Check if conversation already exists — return existing instead of creating duplicate
+  const { data: existingConvo } = await supabase
+    .from('messages')
+    .select('id')
+    .or(`and(sender_id.eq.${req.userId},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${req.userId})`)
+    .eq('payment_status', 'paid')
+    .limit(1);
+
+  if (existingConvo?.length) {
+    return res.status(200).json({ existing: true, other_user_id: receiver_id });
   }
 
   // Create message
