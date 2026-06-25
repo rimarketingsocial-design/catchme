@@ -93,6 +93,14 @@ export default {
   vibe_be_first: 'Sei der Erste mit einem Vibe',
   checked_in_live: 'Live',
 
+  // Profile view
+  free_messages: 'kostenlose Nachrichten verfügbar',
+  currently_at: 'Gerade in',
+  expires_at_time: 'Läuft ab um',
+  intention_set: 'Deine Absicht für heute Nacht ist',
+  intention_locked_msg: 'Du kannst die Absicht ändern in',
+  intention_error: 'Fehler. Bitte erneut versuchen.',
+
   // Club dashboard
   events: 'Veranstaltungen',
   add_event: '+ Hinzufügen',

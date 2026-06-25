@@ -93,6 +93,14 @@ export default {
   vibe_be_first: 'Budi prvi/a koji objavljuje Vibe',
   checked_in_live: 'Live',
 
+  // Profile view
+  free_messages: 'besplatnih poruka dostupno',
+  currently_at: 'Trenutno si u',
+  expires_at_time: 'Ističe u',
+  intention_set: 'Tvoja namjera za večeras je',
+  intention_locked_msg: 'Možeš promijeniti namjeru za',
+  intention_error: 'Greška. Pokušaj ponovo.',
+
   // Club dashboard
   events: 'Događaji',
   add_event: '+ Dodaj',

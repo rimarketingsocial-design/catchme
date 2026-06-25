@@ -26,6 +26,7 @@ export default function Profile() {
   const [successMsg, setSuccessMsg] = useState('');
   const [saveError, setSaveError] = useState('');
   const [intentionToast, setIntentionToast] = useState('');
+  const [intentionError, setIntentionError] = useState('');
   const [intentionLock, setIntentionLock] = useState(null); // { hours_left, minutes_left, unlock_at }
 
   // Edit form state
@@ -100,16 +101,20 @@ export default function Profile() {
   const handleIntention = async (type) => {
     if (intentionLock) return;
     setIntentionSaving(true);
+    setIntentionError('');
     try {
       await api.post('/api/intentions', { type });
       await fetchProfile();
-      const intentionLabel = { poznanstvo: 'Poznanstvo', veza: 'Veza', avantura: 'Avantura' }[type];
-      setIntentionToast(`Vaša namjera za večeras je "${intentionLabel}". Namjeru možete promijeniti nakon 12h. Srećno! 🍀`);
+      const label = t(type);
+      setIntentionToast(`${t('intention_set')} "${label}". 🍀`);
       setTimeout(() => setIntentionToast(''), 5000);
     } catch (err) {
       const data = err.response?.data;
       if (data?.error === 'locked') {
         setIntentionLock(data);
+      } else {
+        setIntentionError(t('intention_error'));
+        setTimeout(() => setIntentionError(''), 4000);
       }
     } finally {
       setIntentionSaving(false);
@@ -277,7 +282,7 @@ export default function Profile() {
             </div>
             <h2 className="text-white font-black text-xl">{profile?.name}</h2>
             <p className="text-gray-500 text-sm mt-1">
-              {profile?.gender === 'male' ? '♂ Muško' : '♀ Žensko'} · {profile?.city}
+              {profile?.gender === 'male' ? `♂ ${t('male')}` : `♀ ${t('female')}`} · {profile?.city}
             </p>
             {profile?.bio && (
               <p className="text-gray-400 text-sm mt-3 text-center px-8 leading-relaxed">{profile.bio}</p>
@@ -289,7 +294,7 @@ export default function Profile() {
               <div>
                 <p className="text-white font-black text-lg leading-tight">{profile?.catch_coins_total || 0} Catch Coins</p>
                 <p className="text-gray-500 text-xs">
-                  {Math.floor((profile?.catch_coins_total || 0) / 10)} besplatnih poruka dostupno
+                  {Math.floor((profile?.catch_coins_total || 0) / 10)} {t('free_messages')}
                 </p>
               </div>
             </div>
@@ -299,10 +304,10 @@ export default function Profile() {
             {/* Current checkin */}
             {checkin && (
               <div className="bg-dark-800 border border-neon-pink/20 rounded-2xl p-4">
-                <p className="text-gray-500 text-xs mb-1">Trenutno si u</p>
+                <p className="text-gray-500 text-xs mb-1">{t('currently_at')}</p>
                 <p className="text-white font-bold">{checkin.clubs?.name}</p>
                 <p className="text-gray-500 text-xs mt-1">
-                  Ističe: {new Date(checkin.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {t('expires_at_time')} {new Date(checkin.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
             )}
@@ -336,9 +341,12 @@ export default function Profile() {
                     </button>
                   ))}
                 </div>
+                {intentionError && (
+                  <p className="text-red-400 text-xs mt-2 text-center">{intentionError}</p>
+                )}
                 {activeLock && (
                   <p className="text-gray-600 text-xs mt-3 text-center">
-                    Možete promijeniti namjeru za {activeLock.hours_left}h {activeLock.minutes_left}m
+                    {t('intention_locked_msg')} {activeLock.hours_left}h {activeLock.minutes_left}m
                   </p>
                 )}
               </div>
