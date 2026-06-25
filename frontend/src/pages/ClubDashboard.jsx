@@ -3,6 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import api from '../lib/api';
 
+const IconPin = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+const IconMusic = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+  </svg>
+);
+const IconCalendar = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+);
+const IconClock = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+const IconTrash = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </svg>
+);
+
 export default function ClubDashboard() {
   const navigate = useNavigate();
   const [club, setClub] = useState(null);
@@ -88,7 +114,10 @@ export default function ClubDashboard() {
           <div>
             <p className="text-gray-500 text-xs mb-1">Dashboard kluba</p>
             <h1 className="text-white font-black text-2xl">{club?.name}</h1>
-            <p className="text-gray-500 text-sm mt-0.5">📍 {club?.address} · 🎵 {club?.genre}</p>
+            <p className="text-gray-500 text-sm mt-0.5 flex items-center gap-1.5 flex-wrap">
+              <span className="text-neon-pink"><IconPin /></span>{club?.address}
+              {club?.genre && <><span className="text-dark-500">·</span><span className="text-neon-purple"><IconMusic /></span>{club?.genre}</>}
+            </p>
           </div>
           <button onClick={handleLogout} className="text-gray-600 text-xs hover:text-red-400 transition-colors mt-1">
             Odjavi se
@@ -127,7 +156,7 @@ export default function ClubDashboard() {
             />
             <div className="flex gap-2">
               <div className="flex-1">
-                <label className="text-gray-500 text-xs mb-1 block">📅 Datum</label>
+                <label className="text-gray-500 text-xs mb-1 flex items-center gap-1"><span className="text-neon-pink opacity-70"><IconCalendar /></span> Date</label>
                 <input
                   type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} required
                   className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
@@ -136,14 +165,14 @@ export default function ClubDashboard() {
             </div>
             <div className="flex gap-2">
               <div className="flex-1">
-                <label className="text-gray-500 text-xs mb-1 block">🕐 Start</label>
+                <label className="text-gray-500 text-xs mb-1 flex items-center gap-1"><span className="text-neon-purple opacity-70"><IconClock /></span> Start</label>
                 <input
                   type="time" value={eventTime} onChange={e => setEventTime(e.target.value)} required
                   className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
                 />
               </div>
               <div className="flex-1">
-                <label className="text-gray-500 text-xs mb-1 block">🏁 Ends</label>
+                <label className="text-gray-500 text-xs mb-1 flex items-center gap-1"><span className="text-gray-500 opacity-70"><IconClock /></span> Ends</label>
                 <input
                   type="time" value={eventEndTime} onChange={e => setEventEndTime(e.target.value)}
                   className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
@@ -164,8 +193,12 @@ export default function ClubDashboard() {
         {/* Events list */}
         {events.length === 0 ? (
           <div className="text-center py-12 text-gray-600">
-            <p className="text-4xl mb-3">🎉</p>
-            <p>Nema događaja. Dodaj prvi!</p>
+            <div className="w-14 h-14 rounded-full bg-dark-800 border border-dark-600 flex items-center justify-center mx-auto mb-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/>
+              </svg>
+            </div>
+            <p>No events yet. Add the first one!</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -173,15 +206,23 @@ export default function ClubDashboard() {
               <div key={event.id} className="bg-dark-800 border border-dark-600 rounded-2xl p-4 flex items-center justify-between">
                 <div>
                   <p className="text-white font-bold">{event.name}</p>
-                  <p className="text-gray-500 text-sm mt-0.5">
-                    📅 {formatDate(event.date)} · 🕐 {event.start_time?.slice(0, 5)}{event.end_time ? ` – ${event.end_time.slice(0, 5)}` : ''}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="flex items-center gap-1 text-gray-500 text-xs">
+                      <span className="text-neon-pink opacity-70"><IconCalendar /></span>
+                      {formatDate(event.date)}
+                    </span>
+                    <span className="text-dark-500 text-xs">·</span>
+                    <span className="flex items-center gap-1 text-gray-500 text-xs">
+                      <span className="text-neon-purple opacity-70"><IconClock /></span>
+                      {event.start_time?.slice(0, 5)}{event.end_time ? ` – ${event.end_time.slice(0, 5)}` : ''}
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={() => handleDelete(event.id)}
-                  className="text-gray-600 hover:text-red-400 transition-colors text-lg ml-4"
+                  className="text-gray-600 hover:text-red-400 transition-colors ml-4 p-1"
                 >
-                  ✕
+                  <IconTrash />
                 </button>
               </div>
             ))}
