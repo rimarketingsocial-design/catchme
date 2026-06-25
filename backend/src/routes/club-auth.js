@@ -55,6 +55,30 @@ router.get('/me', requireAuth, async (req, res) => {
   res.json(club);
 });
 
+// PATCH /api/club-auth/me — update club profile
+router.patch('/me', requireAuth, async (req, res) => {
+  const { data: owner } = await supabase
+    .from('club_owners')
+    .select('club_id')
+    .eq('auth_user_id', req.userId)
+    .single();
+  if (!owner) return res.status(403).json({ error: 'No club found' });
+
+  const allowed = ['name', 'address', 'genre', 'city', 'photo_url', 'description'];
+  const updates = {};
+  allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+
+  const { data, error } = await supabase
+    .from('clubs')
+    .update(updates)
+    .eq('id', owner.club_id)
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 // GET /api/club-auth/genres
 router.get('/genres', (req, res) => {
   res.json(GENRES);

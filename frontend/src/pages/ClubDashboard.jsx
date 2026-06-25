@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import api from '../lib/api';
+
+const GENRES = ['House', 'Techno', 'Hip-Hop', 'R&B', 'Pop', 'Latino', 'Turbo-Folk', 'Rock', 'EDM', 'Commercial'];
+const LANGUAGES = [
+  { code: 'en', flag: '🇬🇧', label: 'English' },
+  { code: 'sr', flag: '🇷🇸', label: 'Srpski' },
+  { code: 'de', flag: '🇩🇪', label: 'Deutsch' },
+];
 
 const IconPin = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -28,6 +35,26 @@ const IconTrash = () => (
     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
   </svg>
 );
+const IconMenu = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+const IconEdit = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+const IconGlobe = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>
+);
+const IconLogout = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
 
 export default function ClubDashboard() {
   const navigate = useNavigate();
@@ -38,6 +65,22 @@ export default function ClubDashboard() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Menu
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuView, setMenuView] = useState('main'); // 'main' | 'language' | 'edit'
+  const menuRef = useRef();
+
+  // Club language (stored locally for club dashboard)
+  const [clubLang, setClubLang] = useState(() => localStorage.getItem('club_lang') || 'en');
+
+  // Edit profile state
+  const [editName, setEditName] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editGenre, setEditGenre] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editSaving, setEditSaving] = useState('');
+
+  // Event form
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [eventTime, setEventTime] = useState('');
@@ -45,6 +88,18 @@ export default function ClubDashboard() {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+        setMenuView('main');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const loadData = async () => {
@@ -75,7 +130,7 @@ export default function ClubDashboard() {
       setEventName(''); setEventDate(''); setEventTime(''); setEventEndTime('');
       setShowForm(false);
     } catch (err) {
-      setError(err.response?.data?.error || 'Greška');
+      setError(err.response?.data?.error || 'Error saving event');
     } finally {
       setSaving(false);
     }
@@ -91,7 +146,36 @@ export default function ClubDashboard() {
     navigate('/');
   };
 
-  const formatDate = (d) => new Date(d).toLocaleDateString('sr-RS', { weekday: 'short', day: 'numeric', month: 'short' });
+  const openEdit = () => {
+    setEditName(club?.name || '');
+    setEditAddress(club?.address || '');
+    setEditGenre(club?.genre || '');
+    setEditCity(club?.city || '');
+    setMenuView('edit');
+  };
+
+  const handleSaveProfile = async () => {
+    setEditSaving(true);
+    try {
+      const { data } = await api.patch('/api/club-auth/me', {
+        name: editName.trim(),
+        address: editAddress.trim(),
+        genre: editGenre,
+        city: editCity.trim(),
+      });
+      setClub(data);
+      setShowMenu(false);
+      setMenuView('main');
+    } catch {}
+    setEditSaving(false);
+  };
+
+  const switchLang = (code) => {
+    setClubLang(code);
+    localStorage.setItem('club_lang', code);
+  };
+
+  const formatDate = (d) => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
   if (loading) {
     return (
@@ -112,16 +196,123 @@ export default function ClubDashboard() {
       <div className="px-6 pt-12 pb-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-gray-500 text-xs mb-1">Dashboard kluba</p>
             <h1 className="text-white font-black text-2xl">{club?.name}</h1>
             <p className="text-gray-500 text-sm mt-0.5 flex items-center gap-1.5 flex-wrap">
               <span className="text-neon-pink"><IconPin /></span>{club?.address}
               {club?.genre && <><span className="text-dark-500">·</span><span className="text-neon-purple"><IconMusic /></span>{club?.genre}</>}
             </p>
           </div>
-          <button onClick={handleLogout} className="text-gray-600 text-xs hover:text-red-400 transition-colors mt-1">
-            Odjavi se
-          </button>
+
+          {/* Hamburger menu */}
+          <div className="relative mt-1" ref={menuRef}>
+            <button
+              onClick={() => { setShowMenu(v => !v); setMenuView('main'); }}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-dark-700 transition-all"
+            >
+              <IconMenu />
+            </button>
+
+            {showMenu && (
+              <div className="absolute right-0 top-11 w-56 bg-dark-800 border border-dark-600 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                {menuView === 'main' && (
+                  <>
+                    <button
+                      onClick={openEdit}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-white transition-colors text-sm font-medium"
+                    >
+                      <span className="text-neon-pink"><IconEdit /></span>
+                      Edit Profile
+                    </button>
+                    <div className="border-t border-dark-600" />
+                    <button
+                      onClick={() => setMenuView('language')}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-white transition-colors text-sm font-medium"
+                    >
+                      <span className="text-neon-purple"><IconGlobe /></span>
+                      App Language
+                      <span className="ml-auto text-gray-500 text-xs">{LANGUAGES.find(l => l.code === clubLang)?.flag}</span>
+                    </button>
+                    <div className="border-t border-dark-600" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 text-gray-300 hover:bg-dark-700 hover:text-red-400 transition-colors text-sm font-medium"
+                    >
+                      <span><IconLogout /></span>
+                      Sign Out
+                    </button>
+                  </>
+                )}
+
+                {menuView === 'language' && (
+                  <>
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-dark-600">
+                      <button onClick={() => setMenuView('main')} className="text-gray-500 hover:text-white transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                      </button>
+                      <span className="text-white text-sm font-semibold">App Language</span>
+                    </div>
+                    {LANGUAGES.map(lang => (
+                      <button
+                        key={lang.code}
+                        onClick={() => { switchLang(lang.code); setMenuView('main'); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors ${
+                          clubLang === lang.code
+                            ? 'text-white bg-neon-pink/15'
+                            : 'text-gray-300 hover:bg-dark-700 hover:text-white'
+                        }`}
+                      >
+                        <span>{lang.flag}</span>
+                        {lang.label}
+                        {clubLang === lang.code && <span className="ml-auto text-neon-pink text-xs">✓</span>}
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {menuView === 'edit' && (
+                  <>
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-dark-600">
+                      <button onClick={() => setMenuView('main')} className="text-gray-500 hover:text-white transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                      </button>
+                      <span className="text-white text-sm font-semibold">Edit Profile</span>
+                    </div>
+                    <div className="p-4 flex flex-col gap-3">
+                      <input
+                        value={editName} onChange={e => setEditName(e.target.value)}
+                        placeholder="Club name"
+                        className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
+                      />
+                      <input
+                        value={editAddress} onChange={e => setEditAddress(e.target.value)}
+                        placeholder="Address"
+                        className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
+                      />
+                      <input
+                        value={editCity} onChange={e => setEditCity(e.target.value)}
+                        placeholder="City"
+                        className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
+                      />
+                      <select
+                        value={editGenre} onChange={e => setEditGenre(e.target.value)}
+                        className="w-full bg-dark-700 border border-dark-500 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors [color-scheme:dark]"
+                      >
+                        <option value="">Select genre</option>
+                        {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                      <button
+                        onClick={handleSaveProfile}
+                        disabled={editSaving}
+                        className="w-full py-2 rounded-xl bg-neon-gradient text-white text-sm font-bold disabled:opacity-40"
+                      >
+                        {editSaving ? '...' : 'Save'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -135,23 +326,23 @@ export default function ClubDashboard() {
       {/* Events section */}
       <div className="px-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white font-bold text-lg">Događaji / Events</h2>
+          <h2 className="text-white font-bold text-lg">Events</h2>
           <button
             onClick={() => setShowForm(!showForm)}
             className="text-sm bg-neon-gradient text-white font-semibold px-4 py-2 rounded-xl"
           >
-            + Dodaj
+            + Add
           </button>
         </div>
 
         {/* Add event form */}
         {showForm && (
           <form onSubmit={handleAddEvent} className="bg-dark-800 border border-neon-pink/20 rounded-2xl p-4 mb-4 flex flex-col gap-3">
-            <h3 className="text-white font-semibold text-sm">Novi događaj</h3>
+            <h3 className="text-white font-semibold text-sm">New Event</h3>
             {error && <p className="text-red-400 text-xs">{error}</p>}
             <input
               value={eventName} onChange={e => setEventName(e.target.value)} required
-              placeholder="Naziv žurke"
+              placeholder="Party name"
               className="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-neon-pink transition-colors"
             />
             <div className="flex gap-2">
@@ -181,10 +372,10 @@ export default function ClubDashboard() {
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-dark-500 text-gray-400 text-sm font-semibold">
-                Otkaži
+                Cancel
               </button>
               <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-neon-gradient text-white text-sm font-bold disabled:opacity-40">
-                {saving ? '...' : 'Sačuvaj'}
+                {saving ? '...' : 'Save'}
               </button>
             </div>
           </form>
